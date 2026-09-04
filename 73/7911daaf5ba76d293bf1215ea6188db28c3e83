@@ -1,0 +1,19 @@
+CLAUDE.md
+  s_cda1ecec45e9bc::t_44daf2c05789d0 1-121
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "737911daaf5ba76d293bf1215ea6188db28c3e83",
+  "prompts": {},
+  "sessions": {
+    "s_cda1ecec45e9bc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "db350e52-47ba-4417-9164-ccfd5fd1f18d",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
