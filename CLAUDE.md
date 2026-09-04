@@ -1,7 +1,7 @@
-# AGENTS.md
+# CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) and other coding agents when working
-with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this
+repository.
 
 Editor plugins that draw a Backstage `catalog-info.yaml` as a graph. Two shipped implementations
 (JetBrains, VS Code) over one shared behaviour contract.
