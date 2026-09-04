@@ -14,7 +14,7 @@ file defines and what it assumes exists.
 |---|---|---|
 | **VS Code** — and Cursor, Windsurf, VSCodium, Theia, Codespaces | Shipped | [`editors/vscode`](editors/vscode) |
 | **JetBrains** — IDEA, PyCharm, GoLand, RustRover, … | Shipped | [`editors/jetbrains`](editors/jetbrains) |
-| Neovim, Zed | Planned | [ROADMAP.md](ROADMAP.md) |
+| Vim, Neovim, Helix, Emacs, Sublime, Zed | Planned, via a language server | [ROADMAP.md](ROADMAP.md) |
 
 ## Layout
 
