@@ -1,0 +1,17 @@
+# The smallest useful descriptor: one component that owns nothing and declares nothing else.
+#
+# Expect 1 solid node and 2 dashed placeholders -- neither the group nor the system is
+# declared here, which is the normal shape of a single-repository catalog-info.yaml.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: storefront-web
+  title: Storefront Web
+  description: The public storefront
+  tags:
+    - typescript
+spec:
+  type: website
+  lifecycle: production
+  owner: group:storefront-team
+  system: storefront

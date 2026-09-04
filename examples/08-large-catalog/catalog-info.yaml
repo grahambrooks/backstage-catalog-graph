@@ -1,0 +1,471 @@
+# A catalog with enough entities to be worth navigating: one domain, four systems,
+# sixteen components, eight APIs, four databases and four teams.
+#
+# This is the example for the viewport controls. Fit to Window should bring the whole graph
+# into view; Ctrl/Cmd-scroll zooms about the cursor; plain scroll pans vertically and
+# Shift-scroll horizontally. Clicking a node should dim everything outside its neighbourhood,
+# which is the only practical way to read a graph this size.
+apiVersion: backstage.io/v1alpha1
+kind: Domain
+metadata:
+  name: commerce
+  title: Commerce
+  description: The whole customer-facing estate
+spec:
+  owner: group:commerce-leadership
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: storefront
+  title: Storefront
+spec:
+  owner: group:storefront-team
+  domain: commerce
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: storefront-web
+  title: Storefront Web
+  tags:
+    - typescript
+spec:
+  type: website
+  lifecycle: production
+  owner: group:storefront-team
+  system: storefront
+  providesApis:
+    - storefront-web-api
+  consumesApis:
+    - platform-gateway-api
+  dependsOn:
+    - resource:default/storefront-db
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: storefront-search
+  title: Storefront Search
+  tags:
+    - kotlin
+spec:
+  type: service
+  lifecycle: production
+  owner: group:storefront-team
+  system: storefront
+  providesApis:
+    - storefront-search-api
+  consumesApis:
+    - platform-gateway-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: storefront-recommendations
+  title: Storefront Recommendations
+  tags:
+    - typescript
+spec:
+  type: service
+  lifecycle: production
+  owner: group:storefront-team
+  system: storefront
+  consumesApis:
+    - platform-gateway-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: storefront-cms
+  title: Storefront Cms
+  tags:
+    - kotlin
+spec:
+  type: service
+  lifecycle: experimental
+  owner: group:storefront-team
+  system: storefront
+  consumesApis:
+    - platform-gateway-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: storefront-web-api
+  title: Storefront Web API
+spec:
+  type: openapi
+  lifecycle: production
+  owner: group:storefront-team
+  system: storefront
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: storefront-search-api
+  title: Storefront Search API
+spec:
+  type: openapi
+  lifecycle: production
+  owner: group:storefront-team
+  system: storefront
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: storefront-db
+  title: Storefront Database
+spec:
+  type: database
+  owner: group:storefront-team
+  system: storefront
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: checkout
+  title: Checkout
+spec:
+  owner: group:checkout-team
+  domain: commerce
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: checkout-cart
+  title: Checkout Cart
+  tags:
+    - typescript
+spec:
+  type: service
+  lifecycle: production
+  owner: group:checkout-team
+  system: checkout
+  providesApis:
+    - checkout-cart-api
+  consumesApis:
+    - platform-gateway-api
+  dependsOn:
+    - resource:default/checkout-db
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: checkout-payments
+  title: Checkout Payments
+  tags:
+    - kotlin
+spec:
+  type: service
+  lifecycle: production
+  owner: group:checkout-team
+  system: checkout
+  providesApis:
+    - checkout-payments-api
+  consumesApis:
+    - platform-gateway-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: checkout-tax
+  title: Checkout Tax
+  tags:
+    - typescript
+spec:
+  type: service
+  lifecycle: production
+  owner: group:checkout-team
+  system: checkout
+  consumesApis:
+    - platform-gateway-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: checkout-fraud
+  title: Checkout Fraud
+  tags:
+    - kotlin
+spec:
+  type: service
+  lifecycle: experimental
+  owner: group:checkout-team
+  system: checkout
+  consumesApis:
+    - platform-gateway-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: checkout-cart-api
+  title: Checkout Cart API
+spec:
+  type: openapi
+  lifecycle: production
+  owner: group:checkout-team
+  system: checkout
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: checkout-payments-api
+  title: Checkout Payments API
+spec:
+  type: openapi
+  lifecycle: production
+  owner: group:checkout-team
+  system: checkout
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: checkout-db
+  title: Checkout Database
+spec:
+  type: database
+  owner: group:checkout-team
+  system: checkout
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: fulfilment
+  title: Fulfilment
+spec:
+  owner: group:logistics-team
+  domain: commerce
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: fulfilment-orders
+  title: Fulfilment Orders
+  tags:
+    - typescript
+spec:
+  type: service
+  lifecycle: production
+  owner: group:logistics-team
+  system: fulfilment
+  providesApis:
+    - fulfilment-orders-api
+  consumesApis:
+    - platform-gateway-api
+  dependsOn:
+    - resource:default/fulfilment-db
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: fulfilment-shipping
+  title: Fulfilment Shipping
+  tags:
+    - kotlin
+spec:
+  type: service
+  lifecycle: production
+  owner: group:logistics-team
+  system: fulfilment
+  providesApis:
+    - fulfilment-shipping-api
+  consumesApis:
+    - platform-gateway-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: fulfilment-returns
+  title: Fulfilment Returns
+  tags:
+    - typescript
+spec:
+  type: service
+  lifecycle: production
+  owner: group:logistics-team
+  system: fulfilment
+  consumesApis:
+    - platform-gateway-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: fulfilment-labels
+  title: Fulfilment Labels
+  tags:
+    - kotlin
+spec:
+  type: service
+  lifecycle: experimental
+  owner: group:logistics-team
+  system: fulfilment
+  consumesApis:
+    - platform-gateway-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: fulfilment-orders-api
+  title: Fulfilment Orders API
+spec:
+  type: openapi
+  lifecycle: production
+  owner: group:logistics-team
+  system: fulfilment
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: fulfilment-shipping-api
+  title: Fulfilment Shipping API
+spec:
+  type: openapi
+  lifecycle: production
+  owner: group:logistics-team
+  system: fulfilment
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: fulfilment-db
+  title: Fulfilment Database
+spec:
+  type: database
+  owner: group:logistics-team
+  system: fulfilment
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: platform
+  title: Platform
+spec:
+  owner: group:platform-team
+  domain: commerce
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: platform-gateway
+  title: Platform Gateway
+  tags:
+    - typescript
+spec:
+  type: service
+  lifecycle: production
+  owner: group:platform-team
+  system: platform
+  providesApis:
+    - platform-gateway-api
+  dependsOn:
+    - resource:default/platform-db
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: platform-identity
+  title: Platform Identity
+  tags:
+    - kotlin
+spec:
+  type: service
+  lifecycle: production
+  owner: group:platform-team
+  system: platform
+  providesApis:
+    - platform-identity-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: platform-telemetry
+  title: Platform Telemetry
+  tags:
+    - typescript
+spec:
+  type: service
+  lifecycle: production
+  owner: group:platform-team
+  system: platform
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: platform-config
+  title: Platform Config
+  tags:
+    - kotlin
+spec:
+  type: service
+  lifecycle: experimental
+  owner: group:platform-team
+  system: platform
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: platform-gateway-api
+  title: Platform Gateway API
+spec:
+  type: openapi
+  lifecycle: production
+  owner: group:platform-team
+  system: platform
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: platform-identity-api
+  title: Platform Identity API
+spec:
+  type: openapi
+  lifecycle: production
+  owner: group:platform-team
+  system: platform
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: platform-db
+  title: Platform Database
+spec:
+  type: database
+  owner: group:platform-team
+  system: platform
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: storefront-team
+  title: Storefront Team
+spec:
+  type: team
+  parent: commerce-leadership
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: checkout-team
+  title: Checkout Team
+spec:
+  type: team
+  parent: commerce-leadership
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: logistics-team
+  title: Logistics Team
+spec:
+  type: team
+  parent: commerce-leadership
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: platform-team
+  title: Platform Team
+spec:
+  type: team
+  parent: commerce-leadership

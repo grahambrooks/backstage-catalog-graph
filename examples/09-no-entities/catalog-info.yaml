@@ -1,0 +1,7 @@
+# A file that matches the name but declares nothing. The graph should show its empty state
+# rather than an error, and report no problems -- a comment-only file is not a broken file.
+#
+# apiVersion: backstage.io/v1alpha1
+# kind: Component
+# metadata:
+#   name: not-yet-written

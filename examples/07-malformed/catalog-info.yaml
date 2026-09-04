@@ -1,0 +1,50 @@
+# Every problem the reader reports, in one file. The graph must still draw the entities it can
+# read: a broken sibling document should not take the picture down.
+#
+# Expect four problems in the toolbar strip, and two solid nodes (`readable` and `duplicated`).
+
+# 1. No `kind`.
+apiVersion: backstage.io/v1alpha1
+metadata:
+  name: missing-kind
+spec:
+  owner: platform
+---
+# 2. No `metadata.name`.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  description: this one has no name
+spec:
+  owner: platform
+---
+# 3. A reference that cannot be an entity reference -- refs may not contain whitespace.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: readable
+  title: Readable
+spec:
+  type: service
+  lifecycle: production
+  owner: the platform team
+  system: storefront
+---
+# 4. A duplicate declaration. The later one wins, and only one node is drawn.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: duplicated
+  title: First definition
+spec:
+  type: service
+  owner: group:platform
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: duplicated
+  title: Second definition
+spec:
+  type: library
+  owner: group:platform

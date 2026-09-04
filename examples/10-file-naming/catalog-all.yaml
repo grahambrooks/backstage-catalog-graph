@@ -1,0 +1,8 @@
+# The explicitly prefixed `catalog-all.yaml` form. This file SHOULD get a Backstage Catalog tab.
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: payments
+  title: Payments
+spec:
+  owner: group:payments-team

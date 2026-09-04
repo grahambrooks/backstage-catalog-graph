@@ -1,0 +1,97 @@
+# Exercises all twelve `spec` fields the plugin reads, so every edge label appears at least
+# once. Zoom past 75% to see the labels.
+#
+#   owner -> ownedBy          system -> partOf            domain -> partOf
+#   subcomponentOf -> partOf  parent -> childOf           children -> parentOf
+#   members -> hasMember      memberOf -> memberOf        providesApis -> providesApi
+#   consumesApis -> consumesApi  dependsOn -> dependsOn   dependencyOf -> dependencyOf
+apiVersion: backstage.io/v1alpha1
+kind: Domain
+metadata:
+  name: commerce
+  title: Commerce
+spec:
+  owner: group:commerce-leadership
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: orders
+  title: Orders
+spec:
+  owner: group:orders-team
+  domain: commerce
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: orders-service
+  title: Orders Service
+spec:
+  type: service
+  lifecycle: production
+  owner: group:orders-team
+  system: orders
+  providesApis:
+    - orders-api
+  consumesApis:
+    - api:default/pricing-api
+  dependsOn:
+    - resource:default/orders-db
+  dependencyOf:
+    - component:default/orders-web
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: orders-worker
+  title: Orders Worker
+  description: A subcomponent, so it hangs off orders-service rather than the system
+spec:
+  type: service
+  lifecycle: production
+  owner: group:orders-team
+  subcomponentOf: orders-service
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: orders-api
+  title: Orders API
+spec:
+  type: openapi
+  lifecycle: production
+  owner: group:orders-team
+  system: orders
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: orders-db
+  title: Orders Database
+spec:
+  type: database
+  owner: group:orders-team
+  system: orders
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: orders-team
+  title: Orders Team
+spec:
+  type: team
+  parent: commerce-leadership
+  children:
+    - orders-oncall
+  members:
+    - ada.lovelace
+---
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: ada.lovelace
+  title: Ada Lovelace
+spec:
+  memberOf:
+    - group:orders-team

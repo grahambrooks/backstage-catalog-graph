@@ -70,13 +70,15 @@ Requires JDK 21. The Gradle toolchain will provision one if the machine has none
 
 ```bash
 ./gradlew build          # compile, unit tests
-./gradlew runIde         # sandbox IDE — open samples/catalog-info.yaml
+./gradlew runIde         # sandbox IDE — then work through examples/
 ./gradlew buildPlugin    # build/distributions/backstage-catalog-graph-<version>.zip
 ./gradlew verifyPlugin   # JetBrains plugin verifier against recommended IDEs
 ```
 
-`samples/catalog-info.yaml` exercises every relation type and includes five references that
-resolve to external placeholders.
+[`examples/`](examples/README.md) is the manual test plan: ten scenarios, each isolating
+one behaviour, with the entity, placeholder, relation and problem counts you should see. Those
+counts are asserted by `ExamplesTest`, so an example that disagrees with the plugin is a bug in
+the plugin.
 
 ## Design notes
 
@@ -106,6 +108,8 @@ src/main/kotlin/com/grahambrooks/backstage/catalog/
 ├── layout/                      layered graph layout                     (IDE-free)
 ├── psi/                         YAML PSI → plain maps
 └── ui/                          canvas, toolbar, split file editor
+
+examples/                        manual test plan — see examples/README.md
 ```
 
 ## Releasing

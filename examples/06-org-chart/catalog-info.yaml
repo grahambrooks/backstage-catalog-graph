@@ -1,0 +1,67 @@
+# Groups and Users only. Group and User sit on the two lowest layers, so this is the example
+# for checking that a graph with no Component or System still lays out sensibly.
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: engineering
+  title: Engineering
+spec:
+  type: department
+  children:
+    - platform
+    - product
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: platform
+  title: Platform
+spec:
+  type: team
+  parent: engineering
+  members:
+    - grace.hopper
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: product
+  title: Product
+spec:
+  type: team
+  parent: engineering
+  members:
+    # katherine.johnson is never declared here: one dashed User among two solid ones.
+    - alan.turing
+    - katherine.johnson
+---
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: grace.hopper
+  title: Grace Hopper
+spec:
+  profile:
+    displayName: Grace Hopper
+  memberOf:
+    - platform
+---
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: alan.turing
+  title: Alan Turing
+spec:
+  memberOf:
+    - product
+---
+# `security` names engineering as its parent, but engineering does not list it as a child.
+# The graph shows the one edge that was actually written, not a symmetric pair.
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: security
+  title: Security
+spec:
+  type: team
+  parent: engineering

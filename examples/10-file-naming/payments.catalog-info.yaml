@@ -1,0 +1,10 @@
+# The `<prefix>.catalog-info.yaml` form. This file SHOULD get a Backstage Catalog tab.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: payments-service
+  title: Payments Service
+spec:
+  type: service
+  lifecycle: production
+  owner: group:payments-team

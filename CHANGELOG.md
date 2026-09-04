@@ -18,3 +18,5 @@ Versions are CalVer (`YYYY.M.D`).
 - Zoom, pan, neighbourhood highlighting, and double-click navigation to a declaration.
 - Inline reporting of descriptor problems (missing `kind`, missing `metadata.name`,
   duplicate entities, unreadable references).
+- `examples/` — a manual test plan of ten scenarios, with expected counts held in place by
+  `ExamplesTest`.

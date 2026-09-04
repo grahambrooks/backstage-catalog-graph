@@ -1,0 +1,10 @@
+# A control. This is an ordinary YAML file, so it SHOULD NOT get a Backstage Catalog tab --
+# it opens in the plain YAML editor with no split view.
+app:
+  title: Payments
+backend:
+  baseUrl: http://localhost:7007
+catalog:
+  locations:
+    - type: file
+      target: ../01-minimal/catalog-info.yaml

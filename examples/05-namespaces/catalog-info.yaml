@@ -1,0 +1,44 @@
+# Namespace handling. Three things to check:
+#
+#  1. `retail-checkout` and `wholesale-checkout` are both named `checkout` in different
+#     namespaces, and must stay two distinct nodes.
+#  2. Inside the `retail` namespace, a bare `checkout-api` reference resolves to
+#     `api:retail/checkout-api` -- an entity's own namespace is the default for its references.
+#  3. `wholesale-checkout` reaches across namespaces with an explicit `api:retail/checkout-api`,
+#     which must land on the same node as (2) and not create a second one.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: checkout
+  namespace: retail
+  title: Checkout (retail)
+spec:
+  type: service
+  lifecycle: production
+  owner: group:retail/checkout-team
+  consumesApis:
+    - checkout-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: checkout-api
+  namespace: retail
+  title: Checkout API (retail)
+spec:
+  type: openapi
+  lifecycle: production
+  owner: group:retail/checkout-team
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: checkout
+  namespace: wholesale
+  title: Checkout (wholesale)
+spec:
+  type: service
+  lifecycle: experimental
+  owner: group:wholesale/trade-team
+  consumesApis:
+    - api:retail/checkout-api

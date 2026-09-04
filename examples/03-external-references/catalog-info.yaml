@@ -1,0 +1,24 @@
+# Every reference here leaves the file. Useful for looking at placeholder rendering on its own,
+# and for checking the "Show External References" toggle: turning it off should leave a single
+# isolated node.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: fulfilment-service
+  title: Fulfilment Service
+  description: Everything it touches is owned by someone else
+spec:
+  type: service
+  lifecycle: production
+  owner: group:logistics
+  system: order-management
+  subcomponentOf: component:default/fulfilment
+  providesApis:
+    - api:default/fulfilment-api
+  consumesApis:
+    - api:default/inventory-api
+    - api:warehouse/stock-levels
+  dependsOn:
+    - resource:default/orders-db
+    - resource:default/shipping-queue
+    - component:default/label-printer
