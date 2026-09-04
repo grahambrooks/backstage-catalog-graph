@@ -20,8 +20,8 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Build and test
-        run: ./gradlew build verifyPlugin
+      - name: Build, test and verify
+        run: ./gradlew build verifyPlugin packageTestKit
 
       - name: Check the tag matches pluginVersion
         run: |

@@ -69,10 +69,18 @@ Stated so a later change doesn't "complete" something that was cut on purpose:
 Requires JDK 21. The Gradle toolchain will provision one if the machine has none.
 
 ```bash
-./gradlew build          # compile, unit tests
-./gradlew runIde         # sandbox IDE — then work through examples/
-./gradlew buildPlugin    # build/distributions/backstage-catalog-graph-<version>.zip
-./gradlew verifyPlugin   # JetBrains plugin verifier against recommended IDEs
+./gradlew build              # compile, unit tests
+./gradlew runIde             # sandbox IDE, with examples/ already open as the project
+./gradlew buildPlugin        # build/distributions/backstage-catalog-graph-<version>.zip
+./gradlew verifyPlugin       # JetBrains plugin verifier against recommended IDEs
+./gradlew packageTestKit     # plugin + examples + TESTING.md, for another machine
+```
+
+`runIde` opens `examples/` as the sandbox project. Add `-PopenFile=<path>` to open one of them
+straight away:
+
+```bash
+./gradlew runIde -PopenFile=examples/04-all-relations/catalog-info.yaml
 ```
 
 [`examples/`](examples/README.md) is the manual test plan: ten scenarios, each isolating
@@ -111,6 +119,17 @@ src/main/kotlin/com/grahambrooks/backstage/catalog/
 
 examples/                        manual test plan — see examples/README.md
 ```
+
+## Handing it to someone else
+
+```bash
+./gradlew packageTestKit
+```
+
+produces `build/distributions/backstage-catalog-graph-<version>-testkit.zip`: the installable
+plugin ZIP, the `examples/` tree, and [`TESTING.md`](TESTING.md) — install steps, controls, and
+what to report. The recipient needs a JetBrains IDE 2025.2 or newer and nothing else. The task
+depends on `test`, so a bundle cannot be built from failing tests.
 
 ## Releasing
 

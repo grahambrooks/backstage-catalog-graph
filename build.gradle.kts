@@ -75,6 +75,46 @@ intellijPlatform {
     }
 }
 
+tasks.runIde {
+    // The sandbox IDE opens `examples/` as its project, so a launch lands straight on the
+    // manual test plan instead of needing File -> Open every time. IntelliJ takes a directory
+    // to open as its first program argument.
+    args(layout.projectDirectory.dir("examples").asFile.absolutePath)
+
+    // -PopenFile=<path relative to the repo> also opens that file, so a launch can land
+    // directly on the example being worked on.
+    providers.gradleProperty("openFile").orNull?.let {
+        args(layout.projectDirectory.file(it).asFile.absolutePath)
+    }
+}
+
+// A single archive to hand to someone testing on another machine: the installable plugin,
+// the examples to test it against, and the instructions. The plugin ZIP is nested rather than
+// unpacked -- "Install Plugin from Disk" wants the archive exactly as the marketplace would
+// see it, and unpacking it here would invite installing the wrong thing.
+tasks.register<Zip>("packageTestKit") {
+    group = "distribution"
+    description = "Builds a testing bundle: the plugin ZIP, the examples, and TESTING.md."
+
+    // One command produces a shippable bundle, and it cannot be produced from failing tests.
+    dependsOn(tasks.test)
+
+    val bundleName = "backstage-catalog-graph-$version-testkit"
+    archiveFileName = "$bundleName.zip"
+    destinationDirectory = layout.buildDirectory.dir("distributions")
+
+    into(bundleName) {
+        from(tasks.buildPlugin.flatMap { it.archiveFile })
+        from(layout.projectDirectory.file("TESTING.md"))
+        from(layout.projectDirectory.file("LICENSE"))
+        from(layout.projectDirectory.dir("examples")) {
+            into("examples")
+            // The sandbox IDE writes a project directory into examples/ when it opens it.
+            exclude(".idea")
+        }
+    }
+}
+
 tasks.test {
     useJUnitPlatform()
     testLogging {

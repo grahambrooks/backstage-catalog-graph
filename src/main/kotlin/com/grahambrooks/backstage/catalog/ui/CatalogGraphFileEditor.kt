@@ -5,6 +5,7 @@ import com.grahambrooks.backstage.catalog.model.CatalogGraphBuilder
 import com.grahambrooks.backstage.catalog.model.CatalogNode
 import com.grahambrooks.backstage.catalog.model.CatalogProblem
 import com.grahambrooks.backstage.catalog.psi.YamlDocumentReader
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
@@ -85,19 +86,26 @@ class CatalogGraphFileEditor(
         alarm.addRequest({ rebuild(preserveViewport = true) }, REBUILD_DELAY_MS)
     }
 
+    /**
+     * Must be called on the EDT.
+     *
+     * The rebuild is deferred until the PSI has caught up with the document rather than forcing
+     * a commit here: committing is a model change, and both callers -- [selectNotify] during
+     * editor open, and the debounce alarm -- run in write-unsafe contexts where forcing one
+     * fails a platform assertion.
+     */
     private fun rebuild(preserveViewport: Boolean) {
         if (project.isDisposed || !file.isValid) return
-        val graph = readGraph()
-        built = true
-        view.show(graph, preserveViewport)
+        PsiDocumentManager.getInstance(project).performWhenAllCommitted {
+            if (project.isDisposed || !file.isValid) return@performWhenAllCommitted
+            val graph = ReadAction.compute<CatalogGraph, RuntimeException> { readGraph() }
+            built = true
+            view.show(graph, preserveViewport)
+        }
     }
 
-    /** Must run on the EDT: commits the document, then reads the freshly parsed PSI. */
+    /** Reads the committed PSI. Must run under a read action. */
     private fun readGraph(): CatalogGraph {
-        val document = document() ?: return CatalogGraph.EMPTY
-        val psiDocumentManager = PsiDocumentManager.getInstance(project)
-        psiDocumentManager.commitDocument(document)
-
         val psiFile = PsiManager.getInstance(project).findFile(file)
         if (psiFile !is YAMLFile) {
             return CatalogGraph(
