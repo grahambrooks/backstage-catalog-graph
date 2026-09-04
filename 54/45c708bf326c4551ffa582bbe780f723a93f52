@@ -1,0 +1,50 @@
+examples/06-org-chart/catalog-info.yaml
+  s_cda1ecec45e9bc::t_04936e39ac095d 34,58-59
+  s_cda1ecec45e9bc::t_bdfe3c9be6ef6c 1-33,35-57,60-67
+examples/08-large-catalog/catalog-info.yaml
+  s_cda1ecec45e9bc::t_2f25e1803e7570 1-471
+CHANGELOG.md
+  s_cda1ecec45e9bc::t_b44037845a6500 21-22
+README.md
+  s_cda1ecec45e9bc::t_b44037845a6500 78
+  s_cda1ecec45e9bc::t_66b38be8583014 73,79-81,111-112
+examples/01-minimal/catalog-info.yaml
+  s_cda1ecec45e9bc::t_f2317d9537ed71 1-17
+examples/05-namespaces/catalog-info.yaml
+  s_cda1ecec45e9bc::t_bdfe3c9be6ef6c 1-44
+examples/10-file-naming/payments.catalog-info.yaml
+  s_cda1ecec45e9bc::t_de356fc7644687 1-10
+examples/03-external-references/catalog-info.yaml
+  s_cda1ecec45e9bc::t_f2317d9537ed71 1-24
+examples/07-malformed/catalog-info.yaml
+  s_cda1ecec45e9bc::t_de356fc7644687 1-50
+examples/04-all-relations/catalog-info.yaml
+  s_cda1ecec45e9bc::t_bdfe3c9be6ef6c 1-97
+examples/README.md
+  s_cda1ecec45e9bc::t_3a82c30ae7d9bf 1-77
+examples/10-file-naming/app-config.yaml
+  s_cda1ecec45e9bc::t_de356fc7644687 1-10
+examples/09-no-entities/catalog-info.yaml
+  s_cda1ecec45e9bc::t_f2317d9537ed71 1-7
+examples/10-file-naming/catalog-all.yaml
+  s_cda1ecec45e9bc::t_de356fc7644687 1-8
+src/test/kotlin/com/grahambrooks/backstage/catalog/ExamplesTest.kt
+  s_cda1ecec45e9bc::t_51a73b2fff6acd 5,7-9,16-23,25-30,33-45,48-55,57-68,70-124
+  s_cda1ecec45e9bc::t_8819b97e887405 1-4,6,10-15,24,31-32,46-47,56,69,125-126
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "5445c708bf326c4551ffa582bbe780f723a93f52",
+  "prompts": {},
+  "sessions": {
+    "s_cda1ecec45e9bc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "db350e52-47ba-4417-9164-ccfd5fd1f18d",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
