@@ -1,0 +1,165 @@
+editors/jetbrains/build.gradle.kts
+  s_cda1ecec45e9bc::t_96e50fcbed55b3 1-125,131-135
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 126-130
+conformance/expected/02-storefront-system.json
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 1-46
+editors/vscode/src/webview/palette.ts
+  s_cda1ecec45e9bc::t_f7b035b0d916a5 1-59
+editors/vscode/src/extension.ts
+  s_cda1ecec45e9bc::t_c8cb0213807ffb 1-62
+editors/vscode/LICENSE
+  s_cda1ecec45e9bc::t_7347d8be891db3 1-21
+examples/README.md
+  s_cda1ecec45e9bc::t_9509a7e4ed078b 3-4,6-8,10-17,67,79-87
+editors/vscode/esbuild.mjs
+  s_cda1ecec45e9bc::t_79f5f602b2b43a 1-29
+conformance/expected/case-namespaces-inherit.json
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 1-21
+editors/vscode/src/core/entityKind.ts
+  s_cda1ecec45e9bc::t_d21ba566710e63 1-32
+editors/vscode/.vscodeignore
+  s_cda1ecec45e9bc::t_3bdaa3ab70ab67 1,3-12
+  s_cda1ecec45e9bc::t_cfcf39c537e4ee 2
+editors/vscode/CHANGELOG.md
+  s_cda1ecec45e9bc::t_48f58864028700 1-18
+conformance/expected/01-minimal.json
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 1-18
+README.md
+  s_cda1ecec45e9bc::t_a6c98a069e3d80 3-5,13-36,38-41,43-48,50-93,111-113,130-134
+editors/vscode/src/core/wire.ts
+  s_cda1ecec45e9bc::t_d3709b5fddb2e8 1-85
+.github/workflows/build-vscode.yml
+  s_cda1ecec45e9bc::t_ef3990fd7338be 1-46
+conformance/cases/ref-forms.yaml
+  s_cda1ecec45e9bc::t_b7ab710bbe2211 1-15
+conformance/cases/wrong-shapes.yaml
+  s_cda1ecec45e9bc::t_b7ab710bbe2211 1-24
+editors/vscode/src/test/conformance.test.ts
+  s_cda1ecec45e9bc::t_c1af9f424b3e1d 1-120
+conformance/cases/namespaces-inherit.yaml
+  s_cda1ecec45e9bc::t_b7ab710bbe2211 1-19
+conformance/expected/06-org-chart.json
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 1-29
+conformance/expected/10-file-naming-payments.catalog-info.json
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 1-15
+conformance/expected/08-large-catalog.json
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 1-146
+conformance/spec.md
+  s_cda1ecec45e9bc::t_e8524baffe6366 140-144
+  s_cda1ecec45e9bc::t_5e899d83b60a85 1-139,145-155
+editors/vscode/package.json
+  s_cda1ecec45e9bc::t_e7ce96e82b2237 95-97
+  s_cda1ecec45e9bc::t_3bdaa3ab70ab67 1-94,98-109
+.vscode/launch.json
+  s_cda1ecec45e9bc::t_cfcf39c537e4ee 1-16
+editors/vscode/.gitignore
+  s_cda1ecec45e9bc::t_3bdaa3ab70ab67 1-4
+conformance/expected/03-external-references.json
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 1-33
+conformance/cases/casing.yaml
+  s_cda1ecec45e9bc::t_b7ab710bbe2211 1-12
+editors/vscode/src/webview/main.ts
+  s_cda1ecec45e9bc::t_8d9d02486878fc 1-167,171,176-213,216-652
+  s_cda1ecec45e9bc::t_0cdc839c9206c4 168-170,172-175
+  s_cda1ecec45e9bc::t_4261454b165247 214-215
+conformance/expected/case-scalar-or-list.json
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 1-20
+editors/jetbrains/src/test/kotlin/com/grahambrooks/backstage/catalog/conformance/ConformanceTest.kt
+  s_cda1ecec45e9bc::t_ffe950c5739960 1-75
+conformance/cases/cycles.yaml
+  s_cda1ecec45e9bc::t_b7ab710bbe2211 1-19
+editors/vscode/src/core/relationType.ts
+  s_cda1ecec45e9bc::t_d21ba566710e63 1-28,30-41
+  s_cda1ecec45e9bc::t_0ae6db65ed21a8 29
+conformance/README.md
+  s_cda1ecec45e9bc::t_ef3990fd7338be 1-39
+.pre-commit-config.yaml
+  s_cda1ecec45e9bc::t_f395db491a9d83 1,9-10,16-25
+conformance/expected/07-malformed.json
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 1-23
+conformance/expected/case-ref-forms.json
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 1-27
+editors/jetbrains/src/test/kotlin/com/grahambrooks/backstage/catalog/ExamplesTest.kt
+  s_cda1ecec45e9bc::t_dadd3880d9182f 1-127
+editors/jetbrains/src/test/kotlin/com/grahambrooks/backstage/catalog/conformance/ConformanceFormat.kt
+  s_cda1ecec45e9bc::t_f4e178afaf161b 1-116
+conformance/expected/09-no-entities.json
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 1-10
+conformance/manifest.json
+  s_cda1ecec45e9bc::t_e9eeef0e091d83 1-94
+conformance/expected/case-casing.json
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 1-16
+editors/vscode/src/core/catalogGraphBuilder.ts
+  s_cda1ecec45e9bc::t_85d0e37ea4db50 45-46
+  s_cda1ecec45e9bc::t_1052531390826b 1-44,47-186
+conformance/cases/scalar-or-list.yaml
+  s_cda1ecec45e9bc::t_b7ab710bbe2211 1-22
+conformance/expected/case-cycles.json
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 1-20
+editors/vscode/src/graphPanel.ts
+  s_cda1ecec45e9bc::t_b5ec9a12e8d66a 1-267,272,274-291
+  s_cda1ecec45e9bc::t_0cdc839c9206c4 268-271,273
+editors/vscode/README.md
+  s_cda1ecec45e9bc::t_48f58864028700 1-71
+conformance/expected/05-namespaces.json
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 1-23
+.github/workflows/publish-marketplace.yml
+  s_cda1ecec45e9bc::t_f395db491a9d83 1-3,8-13,15,24,29,35,37-39,46-62
+.github/workflows/release.yml
+  s_cda1ecec45e9bc::t_f395db491a9d83 21-26,29-41,44-45,47-50,55-57
+editors/vscode/src/core/catalogGraph.ts
+  s_cda1ecec45e9bc::t_1052531390826b 1-93
+.vscode/tasks.json
+  s_cda1ecec45e9bc::t_cfcf39c537e4ee 1-13
+CHANGELOG.md
+  s_cda1ecec45e9bc::t_9509a7e4ed078b 3-5,13-34,38-40
+editors/vscode/src/core/entityRef.ts
+  s_cda1ecec45e9bc::t_d21ba566710e63 1-71
+.github/workflows/build-jetbrains.yml
+  s_cda1ecec45e9bc::t_ef3990fd7338be 1-51
+editors/vscode/src/core/layeredLayout.ts
+  s_cda1ecec45e9bc::t_85d0e37ea4db50 1-216
+editors/vscode/src/core/catalogFiles.ts
+  s_cda1ecec45e9bc::t_d3709b5fddb2e8 1-33
+conformance/expected/case-wrong-shapes.json
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 1-16
+editors/vscode/src/core/rawDocument.ts
+  s_cda1ecec45e9bc::t_1052531390826b 1-12
+conformance/expected/04-all-relations.json
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 1-47
+editors/vscode/src/test/core.test.ts
+  s_cda1ecec45e9bc::t_4261454b165247 1-83,86,89-162
+  s_cda1ecec45e9bc::t_e8524baffe6366 84-85,87-88
+editors/vscode/tsconfig.json
+  s_cda1ecec45e9bc::t_3bdaa3ab70ab67 1-20
+ROADMAP.md
+  s_cda1ecec45e9bc::t_65947fa5462839 1-93
+conformance/expected/case-empty.json
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 1-10
+conformance/expected/10-file-naming-catalog-all.json
+  s_cda1ecec45e9bc::t_f9aaeb980f101e 1-15
+.gitignore
+  s_cda1ecec45e9bc::t_ef3990fd7338be 1,4-14
+editors/vscode/package-lock.json
+  s_cda1ecec45e9bc::t_70b640ce67fb88 1-4360
+editors/vscode/src/core/index.ts
+  s_cda1ecec45e9bc::t_a58d8e6373dcd7 1-14
+editors/vscode/src/core/yamlDocuments.ts
+  s_cda1ecec45e9bc::t_ae17d86b516cf7 1-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "f3b1000f000e320416f6b6fb508a95763ba950ac",
+  "prompts": {},
+  "sessions": {
+    "s_cda1ecec45e9bc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "db350e52-47ba-4417-9164-ccfd5fd1f18d",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
