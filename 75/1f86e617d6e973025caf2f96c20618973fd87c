@@ -1,0 +1,33 @@
+build.gradle.kts
+  s_cda1ecec45e9bc::t_c6692797017d3d 78-90
+  s_cda1ecec45e9bc::t_11ad6547f3b659 102-103,106
+  s_cda1ecec45e9bc::t_0be6236262a8c7 91-94,96-98,104-105,107-111,114-117
+  s_cda1ecec45e9bc::t_e1658e02e9e648 95,99-101,112-113
+TESTING.md
+  s_cda1ecec45e9bc::t_e0e186cd70e070 1-78
+.github/workflows/release.yml
+  s_cda1ecec45e9bc::t_4ae5f8fd86dddf 23-24
+src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphFileEditor.kt
+  s_cda1ecec45e9bc::t_881012e8f02767 8,89-96,99-104,107
+CHANGELOG.md
+  s_cda1ecec45e9bc::t_4ae5f8fd86dddf 23-30
+README.md
+  s_cda1ecec45e9bc::t_4ae5f8fd86dddf 72-83,123-132
+  s_cda1ecec45e9bc::t_7d4b7f64f07b25 133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "751f86e617d6e973025caf2f96c20618973fd87c",
+  "prompts": {},
+  "sessions": {
+    "s_cda1ecec45e9bc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "db350e52-47ba-4417-9164-ccfd5fd1f18d",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
