@@ -1,0 +1,93 @@
+# Sample descriptor for trying the plugin out: open this file after `./gradlew runIde`.
+#
+# It declares a domain, a system, two components, an API, a resource and a group, and
+# deliberately references five entities it does not declare -- `group:retail-leadership`,
+# `group:platform-engineering`, `api:default/payments-api`, `resource:default/shared-kafka`
+# and `user:jane.doe` -- so the external placeholders are visible. `group:checkout-team` is
+# declared here, so it is drawn as a normal node.
+apiVersion: backstage.io/v1alpha1
+kind: Domain
+metadata:
+  name: retail
+  title: Retail
+  description: Everything a customer touches on the way to a purchase
+spec:
+  owner: group:retail-leadership
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: checkout
+  title: Checkout
+spec:
+  owner: group:checkout-team
+  domain: retail
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: checkout-web
+  title: Checkout Web
+  description: The customer-facing checkout flow
+  tags:
+    - typescript
+    - frontend
+spec:
+  type: website
+  lifecycle: production
+  owner: group:checkout-team
+  system: checkout
+  consumesApis:
+    - checkout-api
+    - api:default/payments-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: checkout-service
+  title: Checkout Service
+spec:
+  type: service
+  lifecycle: production
+  owner: group:checkout-team
+  system: checkout
+  providesApis:
+    - checkout-api
+  dependsOn:
+    - resource:default/checkout-db
+    - resource:default/shared-kafka
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: checkout-api
+  title: Checkout API
+spec:
+  type: openapi
+  lifecycle: production
+  owner: group:checkout-team
+  system: checkout
+  definition: |
+    openapi: 3.0.0
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: checkout-db
+  title: Checkout Database
+spec:
+  type: database
+  owner: group:checkout-team
+  system: checkout
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: checkout-team
+  title: Checkout Team
+spec:
+  type: team
+  parent: platform-engineering
+  children: []
+  members:
+    - jane.doe

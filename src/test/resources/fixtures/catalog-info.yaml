@@ -1,0 +1,39 @@
+# A component whose owner and system are defined elsewhere -- both become placeholders.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: symgraph
+  title: Symgraph
+  description: Semantic code intelligence MCP server
+  tags:
+    - rust
+    - mcp
+spec:
+  type: service
+  lifecycle: production
+  owner: user:grahambrooks
+  system: developer-tools
+  providesApis:
+    - symgraph-mcp-api
+  consumesApis:
+    - api:default/github-api
+  dependsOn:
+    - resource:default/symgraph-index
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: symgraph-mcp-api
+spec:
+  type: grpc
+  lifecycle: production
+  owner: user:grahambrooks
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: symgraph-index
+spec:
+  type: database
+  owner: user:grahambrooks
+  system: developer-tools

@@ -1,0 +1,18 @@
+.gradle/
+.intellijPlatform/
+build/
+out/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# macOS
+.DS_Store
+
+# Local overrides
+local.properties
+gradle.properties.local

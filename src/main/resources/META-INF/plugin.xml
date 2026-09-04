@@ -1,0 +1,30 @@
+<idea-plugin>
+    <id>com.grahambrooks.backstage.catalog</id>
+    <name>Backstage Catalog Graph</name>
+    <vendor email="graham@grahambrooks.com" url="https://github.com/grahambrooks">Graham Brooks</vendor>
+
+    <description><![CDATA[
+        <p>Visualises a Backstage <code>catalog-info.yaml</code> as the catalog graph it describes.</p>
+        <p>Open any <code>catalog-info.yaml</code> and a <b>Backstage Catalog</b> view appears beside the
+        source. Every entity in the file becomes a node, every <code>spec</code> reference
+        (<code>owner</code>, <code>system</code>, <code>dependsOn</code>, <code>providesApis</code>,
+        <code>consumesApis</code>, <code>subcomponentOf</code>, <code>parent</code>, and the rest) becomes
+        a labelled edge.</p>
+        <p>References that leave the file &mdash; a group owned by another repository, a system defined in
+        the org catalog &mdash; are drawn as dashed <b>placeholder</b> nodes, so the picture shows both what
+        the file defines and what it depends on.</p>
+        <ul>
+            <li>Live update as you type</li>
+            <li>Double-click an entity to jump to its declaration</li>
+            <li>Zoom, pan, and neighbourhood highlighting</li>
+            <li>Descriptor problems reported inline instead of an empty graph</li>
+        </ul>
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.jetbrains.plugins.yaml</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <fileEditorProvider implementation="com.grahambrooks.backstage.catalog.ui.CatalogGraphEditorProvider"/>
+    </extensions>
+</idea-plugin>

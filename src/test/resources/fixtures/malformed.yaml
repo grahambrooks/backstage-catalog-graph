@@ -1,0 +1,24 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  description: this entity has no name
+spec:
+  owner: platform
+---
+apiVersion: backstage.io/v1alpha1
+metadata:
+  name: no-kind-here
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: duplicated
+spec:
+  owner: platform
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: duplicated
+spec:
+  owner: platform
