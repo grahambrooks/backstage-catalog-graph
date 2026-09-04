@@ -21,7 +21,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/grahambrooks/jetbrains-backstage-plugin.git",
+    "url": "https://github.com/grahambrooks/backstage-catalog-graph.git",
     "directory": "editors/vscode"
   },
   "main": "./out/extension.js",
@@ -92,7 +92,7 @@
     "bundle": "node esbuild.mjs",
     "bundle:production": "node esbuild.mjs --production",
     "watch": "node esbuild.mjs --watch",
-    "test": "npm run compile && node --test out-test/test/",
+    "test": "npm run compile && node --test \"out-test/test/**/*.test.js\"",
     "lint": "tsc --project tsconfig.json --noEmit",
     "package": "npm run bundle:production && vsce package --out backstage-catalog-graph-$npm_package_version.vsix",
     "vscode:prepublish": "npm run bundle:production"
