@@ -1,0 +1,20 @@
+{
+  "nodes": [
+    {"ref": "api:default/one", "kind": "API", "title": "one", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "component:default/list-form", "kind": "Component", "title": "list-form", "type": null, "lifecycle": null, "tags": ["production"], "external": false},
+    {"ref": "component:default/scalar-form", "kind": "Component", "title": "scalar-form", "type": null, "lifecycle": null, "tags": ["production"], "external": false},
+    {"ref": "resource:default/db", "kind": "Resource", "title": "db", "type": null, "lifecycle": null, "tags": [], "external": true}
+  ],
+  "edges": [
+    {"from": "component:default/list-form", "to": "resource:default/db", "type": "dependsOn"},
+    {"from": "component:default/list-form", "to": "api:default/one", "type": "providesApi"},
+    {"from": "component:default/scalar-form", "to": "resource:default/db", "type": "dependsOn"},
+    {"from": "component:default/scalar-form", "to": "api:default/one", "type": "providesApi"}
+  ],
+  "problems": [
+  ],
+  "layers": [
+    ["component:default/list-form", "component:default/scalar-form"],
+    ["resource:default/db", "api:default/one"]
+  ]
+}

@@ -1,0 +1,12 @@
+# References are case-insensitive: all three spellings must land on one node, and the
+# declaration itself must match them.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: Checkout
+spec:
+  owner: group:Platform
+  dependsOn:
+    - Component:Default/Checkout
+    - component:checkout
+    - CHECKOUT

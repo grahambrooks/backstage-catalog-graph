@@ -1,0 +1,94 @@
+{
+  "cases": [
+    {
+      "id": "01-minimal",
+      "input": "examples/01-minimal/catalog-info.yaml",
+      "source": "example"
+    },
+    {
+      "id": "02-storefront-system",
+      "input": "examples/02-storefront-system/catalog-info.yaml",
+      "source": "example"
+    },
+    {
+      "id": "03-external-references",
+      "input": "examples/03-external-references/catalog-info.yaml",
+      "source": "example"
+    },
+    {
+      "id": "04-all-relations",
+      "input": "examples/04-all-relations/catalog-info.yaml",
+      "source": "example"
+    },
+    {
+      "id": "05-namespaces",
+      "input": "examples/05-namespaces/catalog-info.yaml",
+      "source": "example"
+    },
+    {
+      "id": "06-org-chart",
+      "input": "examples/06-org-chart/catalog-info.yaml",
+      "source": "example"
+    },
+    {
+      "id": "07-malformed",
+      "input": "examples/07-malformed/catalog-info.yaml",
+      "source": "example"
+    },
+    {
+      "id": "08-large-catalog",
+      "input": "examples/08-large-catalog/catalog-info.yaml",
+      "source": "example"
+    },
+    {
+      "id": "09-no-entities",
+      "input": "examples/09-no-entities/catalog-info.yaml",
+      "source": "example"
+    },
+    {
+      "id": "10-file-naming-catalog-all",
+      "input": "examples/10-file-naming/catalog-all.yaml",
+      "source": "example"
+    },
+    {
+      "id": "10-file-naming-payments.catalog-info",
+      "input": "examples/10-file-naming/payments.catalog-info.yaml",
+      "source": "example"
+    },
+    {
+      "id": "case-casing",
+      "input": "conformance/cases/casing.yaml",
+      "source": "case"
+    },
+    {
+      "id": "case-cycles",
+      "input": "conformance/cases/cycles.yaml",
+      "source": "case"
+    },
+    {
+      "id": "case-empty",
+      "input": "conformance/cases/empty.yaml",
+      "source": "case"
+    },
+    {
+      "id": "case-namespaces-inherit",
+      "input": "conformance/cases/namespaces-inherit.yaml",
+      "source": "case"
+    },
+    {
+      "id": "case-ref-forms",
+      "input": "conformance/cases/ref-forms.yaml",
+      "source": "case"
+    },
+    {
+      "id": "case-scalar-or-list",
+      "input": "conformance/cases/scalar-or-list.yaml",
+      "source": "case"
+    },
+    {
+      "id": "case-wrong-shapes",
+      "input": "conformance/cases/wrong-shapes.yaml",
+      "source": "case"
+    }
+  ]
+}

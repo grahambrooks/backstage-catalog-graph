@@ -1,0 +1,24 @@
+# Descriptors that are valid YAML but the wrong shape. None of these may throw: the reader
+# takes what it can use and ignores the rest.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: wrong-shapes
+  title: 42                            # number where a string belongs
+  tags:
+    - production
+    - 7                                # non-string list entry is dropped
+    - null
+spec: a string, not a mapping          # spec is not a mapping at all
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: odd-spec
+spec:
+  owner:                               # mapping where a reference belongs
+    name: platform
+  dependsOn:
+    - resource:default/db
+    - [nested, list]
+  tags: {}

@@ -1,0 +1,27 @@
+{
+  "nodes": [
+    {"ref": "api:default/pricing", "kind": "API", "title": "pricing", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "component:retail/labels", "kind": "Component", "title": "labels", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "component:retail/refs", "kind": "Component", "title": "refs", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "component:shipping/queue", "kind": "Component", "title": "queue", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "group:retail/platform", "kind": "Group", "title": "platform", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "resource:default/db", "kind": "Resource", "title": "db", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "system:retail/storefront", "kind": "System", "title": "storefront", "type": null, "lifecycle": null, "tags": [], "external": true}
+  ],
+  "edges": [
+    {"from": "component:retail/refs", "to": "api:default/pricing", "type": "consumesApi"},
+    {"from": "component:retail/refs", "to": "component:retail/labels", "type": "dependsOn"},
+    {"from": "component:retail/refs", "to": "component:shipping/queue", "type": "dependsOn"},
+    {"from": "component:retail/refs", "to": "resource:default/db", "type": "dependsOn"},
+    {"from": "component:retail/refs", "to": "group:retail/platform", "type": "ownedBy"},
+    {"from": "component:retail/refs", "to": "system:retail/storefront", "type": "partOf"}
+  ],
+  "problems": [
+  ],
+  "layers": [
+    ["system:retail/storefront"],
+    ["component:retail/refs", "component:retail/labels", "component:shipping/queue"],
+    ["resource:default/db", "api:default/pricing"],
+    ["group:retail/platform"]
+  ]
+}

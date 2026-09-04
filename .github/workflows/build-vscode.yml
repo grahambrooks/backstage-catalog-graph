@@ -1,0 +1,46 @@
+name: Build (VS Code)
+
+on:
+  push:
+    branches: [main]
+    paths: ['editors/vscode/**', 'conformance/**', 'examples/**', '.github/workflows/build-vscode.yml']
+  pull_request:
+    paths: ['editors/vscode/**', 'conformance/**', 'examples/**', '.github/workflows/build-vscode.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: vscode-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: editors/vscode
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: editors/vscode/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Unit tests plus the same conformance corpus the JetBrains job runs.
+      - name: Test
+        run: npm test
+
+      - name: Package
+        run: npx vsce package --out backstage-catalog-graph-${{ github.sha }}.vsix
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vscode-extension
+          path: editors/vscode/*.vsix

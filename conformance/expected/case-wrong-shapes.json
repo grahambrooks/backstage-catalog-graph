@@ -1,0 +1,16 @@
+{
+  "nodes": [
+    {"ref": "component:default/odd-spec", "kind": "Component", "title": "odd-spec", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "component:default/wrong-shapes", "kind": "Component", "title": "42", "type": null, "lifecycle": null, "tags": ["production"], "external": false},
+    {"ref": "resource:default/db", "kind": "Resource", "title": "db", "type": null, "lifecycle": null, "tags": [], "external": true}
+  ],
+  "edges": [
+    {"from": "component:default/odd-spec", "to": "resource:default/db", "type": "dependsOn"}
+  ],
+  "problems": [
+  ],
+  "layers": [
+    ["component:default/wrong-shapes", "component:default/odd-spec"],
+    ["resource:default/db"]
+  ]
+}

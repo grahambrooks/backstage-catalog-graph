@@ -1,8 +1,17 @@
-.gradle/
-.intellijPlatform/
+# Build output
 build/
 out/
-!gradle/wrapper/gradle-wrapper.jar
+dist/
+
+# Gradle
+.gradle/
+.intellijPlatform/
+.kotlin/
+!editors/jetbrains/gradle/wrapper/gradle-wrapper.jar
+
+# Node
+node_modules/
+*.vsix
 
 # IDE
 .idea/

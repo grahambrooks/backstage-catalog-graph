@@ -1,0 +1,33 @@
+{
+  "nodes": [
+    {"ref": "api:default/fulfilment-api", "kind": "API", "title": "fulfilment-api", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "api:default/inventory-api", "kind": "API", "title": "inventory-api", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "api:warehouse/stock-levels", "kind": "API", "title": "stock-levels", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "component:default/fulfilment", "kind": "Component", "title": "fulfilment", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "component:default/fulfilment-service", "kind": "Component", "title": "Fulfilment Service", "type": "service", "lifecycle": "production", "tags": [], "external": false},
+    {"ref": "component:default/label-printer", "kind": "Component", "title": "label-printer", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "group:default/logistics", "kind": "Group", "title": "logistics", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "resource:default/orders-db", "kind": "Resource", "title": "orders-db", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "resource:default/shipping-queue", "kind": "Resource", "title": "shipping-queue", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "system:default/order-management", "kind": "System", "title": "order-management", "type": null, "lifecycle": null, "tags": [], "external": true}
+  ],
+  "edges": [
+    {"from": "component:default/fulfilment-service", "to": "api:default/inventory-api", "type": "consumesApi"},
+    {"from": "component:default/fulfilment-service", "to": "api:warehouse/stock-levels", "type": "consumesApi"},
+    {"from": "component:default/fulfilment-service", "to": "component:default/label-printer", "type": "dependsOn"},
+    {"from": "component:default/fulfilment-service", "to": "resource:default/orders-db", "type": "dependsOn"},
+    {"from": "component:default/fulfilment-service", "to": "resource:default/shipping-queue", "type": "dependsOn"},
+    {"from": "component:default/fulfilment-service", "to": "group:default/logistics", "type": "ownedBy"},
+    {"from": "component:default/fulfilment-service", "to": "component:default/fulfilment", "type": "partOf"},
+    {"from": "component:default/fulfilment-service", "to": "system:default/order-management", "type": "partOf"},
+    {"from": "component:default/fulfilment-service", "to": "api:default/fulfilment-api", "type": "providesApi"}
+  ],
+  "problems": [
+  ],
+  "layers": [
+    ["system:default/order-management"],
+    ["component:default/fulfilment", "component:default/fulfilment-service", "component:default/label-printer"],
+    ["api:default/fulfilment-api", "api:default/inventory-api", "resource:default/orders-db", "resource:default/shipping-queue", "api:warehouse/stock-levels"],
+    ["group:default/logistics"]
+  ]
+}

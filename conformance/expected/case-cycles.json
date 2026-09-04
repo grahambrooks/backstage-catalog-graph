@@ -1,0 +1,20 @@
+{
+  "nodes": [
+    {"ref": "component:default/alpha", "kind": "Component", "title": "alpha", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "component:default/beta", "kind": "Component", "title": "beta", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "group:default/platform", "kind": "Group", "title": "platform", "type": null, "lifecycle": null, "tags": [], "external": true}
+  ],
+  "edges": [
+    {"from": "component:default/alpha", "to": "component:default/alpha", "type": "dependsOn"},
+    {"from": "component:default/alpha", "to": "component:default/beta", "type": "dependsOn"},
+    {"from": "component:default/alpha", "to": "group:default/platform", "type": "ownedBy"},
+    {"from": "component:default/beta", "to": "component:default/alpha", "type": "dependsOn"},
+    {"from": "component:default/beta", "to": "group:default/platform", "type": "ownedBy"}
+  ],
+  "problems": [
+  ],
+  "layers": [
+    ["component:default/alpha", "component:default/beta"],
+    ["group:default/platform"]
+  ]
+}

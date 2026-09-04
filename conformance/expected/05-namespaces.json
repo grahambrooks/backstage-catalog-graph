@@ -1,0 +1,23 @@
+{
+  "nodes": [
+    {"ref": "api:retail/checkout-api", "kind": "API", "title": "Checkout API (retail)", "type": "openapi", "lifecycle": "production", "tags": [], "external": false},
+    {"ref": "component:retail/checkout", "kind": "Component", "title": "Checkout (retail)", "type": "service", "lifecycle": "production", "tags": [], "external": false},
+    {"ref": "component:wholesale/checkout", "kind": "Component", "title": "Checkout (wholesale)", "type": "service", "lifecycle": "experimental", "tags": [], "external": false},
+    {"ref": "group:retail/checkout-team", "kind": "Group", "title": "checkout-team", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "group:wholesale/trade-team", "kind": "Group", "title": "trade-team", "type": null, "lifecycle": null, "tags": [], "external": true}
+  ],
+  "edges": [
+    {"from": "api:retail/checkout-api", "to": "group:retail/checkout-team", "type": "ownedBy"},
+    {"from": "component:retail/checkout", "to": "api:retail/checkout-api", "type": "consumesApi"},
+    {"from": "component:retail/checkout", "to": "group:retail/checkout-team", "type": "ownedBy"},
+    {"from": "component:wholesale/checkout", "to": "api:retail/checkout-api", "type": "consumesApi"},
+    {"from": "component:wholesale/checkout", "to": "group:wholesale/trade-team", "type": "ownedBy"}
+  ],
+  "problems": [
+  ],
+  "layers": [
+    ["component:retail/checkout", "component:wholesale/checkout"],
+    ["api:retail/checkout-api"],
+    ["group:retail/checkout-team", "group:wholesale/trade-team"]
+  ]
+}

@@ -1,0 +1,15 @@
+# Every spelling of an entity reference, all resolving against the rules in spec.md.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: refs
+  namespace: retail
+spec:
+  owner: platform                      # bare -> the field's default kind, entity's namespace
+  system: system:storefront            # kind given, namespace defaulted
+  dependsOn:
+    - resource:default/db              # fully qualified
+    - shipping/queue                   # namespace given, kind defaulted
+    - component:retail/labels          # fully qualified, entity's own namespace
+  consumesApis:
+    - api:default/pricing

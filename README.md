@@ -1,8 +1,8 @@
 # Backstage Catalog Graph
 
-A JetBrains IDE plugin that draws a Backstage `catalog-info.yaml` as the catalog graph it
-describes — entities as nodes, `spec` references as labelled edges, and **dashed placeholders
-for every reference that leaves the file**.
+Editor plugins that draw a Backstage `catalog-info.yaml` as the catalog graph it describes —
+entities as nodes, `spec` references as labelled edges, and **dashed placeholders for every
+reference that leaves the file**.
 
 The placeholders are the point. A descriptor almost never declares everything it names: the
 owning group lives in the org catalog, the system is defined in another repository, a
@@ -10,21 +10,87 @@ owning group lives in the org catalog, the system is defined in another reposito
 tidier but dishonest picture, so they are drawn as ghosts, and the graph shows both what the
 file defines and what it assumes exists.
 
-## What it does
+| Editor | Status | |
+|---|---|---|
+| **VS Code** — and Cursor, Windsurf, VSCodium, Theia, Codespaces | Shipped | [`editors/vscode`](editors/vscode) |
+| **JetBrains** — IDEA, PyCharm, GoLand, RustRover, … | Shipped | [`editors/jetbrains`](editors/jetbrains) |
+| Neovim, Zed | Planned | [ROADMAP.md](ROADMAP.md) |
 
-Open any `catalog-info.yaml` and the editor splits into **Text** and **Backstage Catalog**.
+## Layout
 
-- Every YAML document in the file becomes a node, coloured and layered by entity kind
-  (Domain → System → Component → API/Resource → Group → User).
-- Every reference in `spec` becomes a directed, labelled edge.
-- Anything referenced but not declared becomes a dashed external placeholder; the edge to it is
-  dashed too.
-- The graph rebuilds as you type (debounced), so it tracks the file you are editing.
-- Click a node to highlight its neighbourhood; double-click to jump to its declaration.
-- Descriptor problems — missing `kind`, missing `metadata.name`, duplicate entities,
-  unreadable references — are reported in the toolbar strip instead of yielding a blank graph.
+```
+conformance/          the behaviour contract, and the corpus that pins it
+  spec.md             normative: how a descriptor is read and laid out
+  manifest.json       every case, and the descriptor it reads
+  cases/              edge cases that make poor demos
+  expected/           one golden document per case
 
-### Relations understood
+editors/
+  jetbrains/          Kotlin core + Swing canvas, split editor
+  vscode/             TypeScript core + SVG webview, preview to the side
+
+examples/             ten scenarios, doubling as the manual test plan
+ROADMAP.md            which editors, in what order, and why
+```
+
+## One contract, an implementation per editor
+
+Each editor implements the core — reference resolution, relations, external placeholders,
+layered layout — in its own language. Nothing is shared at runtime. What is shared is
+[`conformance/`](conformance/spec.md): a corpus of descriptors with a golden document for each,
+which **every implementation runs in its own CI, in its own language**.
+
+That is a deliberate trade. The core is about 500 lines and implements a published, slow-moving
+format. Sharing it as a compiled artifact would mean a JVM toolchain inside the VS Code build,
+or rewriting it for WebAssembly — while the half of the work that actually differs, the
+rendering, cannot be shared at any price. Two implementations of 500 lines is the cheaper
+problem, *provided* drift is caught mechanically. That is what the corpus is for: a disagreement
+about what a descriptor means shows up as a failing test, not as a bug report six months later.
+
+The JetBrains side is the reference implementation and generates the goldens. Changing behaviour
+means changing it, regenerating, reading the diff, and then making every other implementation
+pass again:
+
+```bash
+cd editors/jetbrains && ./gradlew test -Dconformance.update=true
+cd editors/vscode    && npm test
+```
+
+If you are adding a third editor, [ROADMAP.md](ROADMAP.md#adding-an-editor) has the order to do
+it in — pass the corpus before writing any rendering code.
+
+## Building
+
+Neither editor needs the other's toolchain.
+
+```bash
+# VS Code — needs Node
+cd editors/vscode
+npm install && npm test && npm run package     # -> backstage-catalog-graph-<version>.vsix
+
+# JetBrains — needs a JDK (Gradle will provision one)
+cd editors/jetbrains
+./gradlew build                                 # compile, unit tests, conformance corpus
+./gradlew runIde                                # sandbox IDE with examples/ open
+./gradlew buildPlugin                           # -> backstage-catalog-graph-<version>.zip
+./gradlew packageTestKit                        # plugin + examples + TESTING.md
+```
+
+## Trying it
+
+[`examples/`](examples/README.md) is a manual test plan of ten scenarios — the everyday
+single-component case, a complete system, placeholder rendering on its own, every relation type,
+namespace equality, a Group/User-only graph, each problem the reader reports, a 37-entity
+catalog for the viewport controls, the empty state, and filename matching. Each lists the exact
+entity, placeholder, relation and problem counts it should produce, and those counts are
+asserted by both implementations.
+
+- **VS Code**: <kbd>F5</kbd> from this repository launches an Extension Development Host with
+  `examples/` open.
+- **JetBrains**: `./gradlew runIde` from `editors/jetbrains`, optionally with
+  `-PopenFile=examples/04-all-relations/catalog-info.yaml`.
+
+## Relations understood
 
 | `spec` field | Relation | Reference defaults to |
 |---|---|---|
@@ -42,14 +108,9 @@ Open any `catalog-info.yaml` and the editor splits into **Text** and **Backstage
 | `dependencyOf` | `dependencyOf` | `Component` |
 
 An explicit prefix always wins: `owner: user:grahambrooks` yields a `User`, not a `Group`.
-References are resolved the way Backstage resolves them — `[<kind>:][<namespace>/]<name>`, with
-the entity's own namespace as the default — and compared case-insensitively, so
-`system: developer-tools` and `system:default/developer-tools` are one node.
-
-### Files it attaches to
-
-`catalog-info.yaml` / `.yml`, `*.catalog-info.yaml`, and the explicitly prefixed
-`catalog-all.yaml` / `catalog-entities.yaml`. Other YAML files are left alone.
+References resolve the way Backstage resolves them — `[<kind>:][<namespace>/]<name>`, with the
+entity's own namespace as the default — and compare case-insensitively.
+[`conformance/spec.md`](conformance/spec.md) is the full, normative version.
 
 ## Deliberately not in scope
 
@@ -64,78 +125,13 @@ Stated so a later change doesn't "complete" something that was cut on purpose:
   references, so it produces no edges.
 - **No editing.** The graph is a view of the YAML; the YAML is edited as YAML.
 
-## Building
-
-Requires JDK 21. The Gradle toolchain will provision one if the machine has none.
-
-```bash
-./gradlew build              # compile, unit tests
-./gradlew runIde             # sandbox IDE, with examples/ already open as the project
-./gradlew buildPlugin        # build/distributions/backstage-catalog-graph-<version>.zip
-./gradlew verifyPlugin       # JetBrains plugin verifier against recommended IDEs
-./gradlew packageTestKit     # plugin + examples + TESTING.md, for another machine
-```
-
-`runIde` opens `examples/` as the sandbox project. Add `-PopenFile=<path>` to open one of them
-straight away:
-
-```bash
-./gradlew runIde -PopenFile=examples/04-all-relations/catalog-info.yaml
-```
-
-[`examples/`](examples/README.md) is the manual test plan: ten scenarios, each isolating
-one behaviour, with the entity, placeholder, relation and problem counts you should see. Those
-counts are asserted by `ExamplesTest`, so an example that disagrees with the plugin is a bug in
-the plugin.
-
-## Design notes
-
-**Java2D, not a diagram framework.** IntelliJ's `com.intellij.diagram` API is Ultimate-only, and
-a JCEF view would mean shipping a JavaScript bundle to draw a few dozen boxes. The canvas is
-plain Java2D, so the plugin works in Community editions and carries no runtime of its own.
-
-**The IDE's YAML PSI, not a bundled parser.** It is already in the IDE, it is incremental so the
-graph is cheap to rebuild while typing, and it gives each document a text offset — which is what
-makes double-click-to-declaration possible.
-
-**Kind-based layering, not longest-path.** A catalog has a conventional reading order. Layering
-by `EntityKind.rank` means the picture keeps its shape as entities are added, rather than
-reshuffling every time a new edge changes the longest path through the graph. Within a layer,
-node order is a barycentre heuristic to cut crossings.
-
-**The model layer knows nothing about the IDE.** `model/` and `layout/` work on plain maps and
-lists, with `psi/YamlDocumentReader` as the only adapter. That is why the tests are ordinary
-JUnit 5 running in under a second, with no IDE fixture.
-
-## Layout
-
-```
-src/main/kotlin/com/grahambrooks/backstage/catalog/
-├── CatalogInfoFiles.kt          which files get a graph tab
-├── model/                       entity refs, relations, graph building   (IDE-free)
-├── layout/                      layered graph layout                     (IDE-free)
-├── psi/                         YAML PSI → plain maps
-└── ui/                          canvas, toolbar, split file editor
-
-examples/                        manual test plan — see examples/README.md
-```
-
-## Handing it to someone else
-
-```bash
-./gradlew packageTestKit
-```
-
-produces `build/distributions/backstage-catalog-graph-<version>-testkit.zip`: the installable
-plugin ZIP, the `examples/` tree, and [`TESTING.md`](TESTING.md) — install steps, controls, and
-what to report. The recipient needs a JetBrains IDE 2025.2 or newer and nothing else. The task
-depends on `test`, so a bundle cannot be built from failing tests.
-
 ## Releasing
 
-CalVer, set in `gradle.properties` as `pluginVersion`. Tag `v<version>` on `main`; the release
-workflow verifies the tag matches, builds, and attaches the ZIP to a GitHub release. Publishing
-to the JetBrains Marketplace is irreversible and stays behind a manual `workflow_dispatch`.
+CalVer, kept in step across editors: `pluginVersion` in `editors/jetbrains/gradle.properties`
+and `version` in `editors/vscode/package.json`. Tag `v<version>`; the release workflow checks
+both match, builds each editor's artifact, and attaches them to a GitHub release. Publishing to
+the JetBrains Marketplace and the VS Code Marketplace is irreversible and stays behind a manual
+`workflow_dispatch`.
 
 ## Licence
 

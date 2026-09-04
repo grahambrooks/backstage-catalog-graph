@@ -75,16 +75,20 @@ intellijPlatform {
     }
 }
 
+// `examples/` and `conformance/` are shared with the other editors, so they sit at the repo
+// root rather than inside this Gradle project.
+val repoRoot: Directory = layout.projectDirectory.dir("../..")
+
 tasks.runIde {
     // The sandbox IDE opens `examples/` as its project, so a launch lands straight on the
     // manual test plan instead of needing File -> Open every time. IntelliJ takes a directory
     // to open as its first program argument.
-    args(layout.projectDirectory.dir("examples").asFile.absolutePath)
+    args(repoRoot.dir("examples").asFile.absolutePath)
 
-    // -PopenFile=<path relative to the repo> also opens that file, so a launch can land
+    // -PopenFile=<path relative to the repo root> also opens that file, so a launch can land
     // directly on the example being worked on.
     providers.gradleProperty("openFile").orNull?.let {
-        args(layout.projectDirectory.file(it).asFile.absolutePath)
+        args(repoRoot.file(it).asFile.absolutePath)
     }
 }
 
@@ -106,8 +110,8 @@ tasks.register<Zip>("packageTestKit") {
     into(bundleName) {
         from(tasks.buildPlugin.flatMap { it.archiveFile })
         from(layout.projectDirectory.file("TESTING.md"))
-        from(layout.projectDirectory.file("LICENSE"))
-        from(layout.projectDirectory.dir("examples")) {
+        from(repoRoot.file("LICENSE"))
+        from(repoRoot.dir("examples")) {
             into("examples")
             // The sandbox IDE writes a project directory into examples/ when it opens it.
             exclude(".idea")
@@ -117,6 +121,13 @@ tasks.register<Zip>("packageTestKit") {
 
 tasks.test {
     useJUnitPlatform()
+    // The example descriptors and the cross-editor conformance corpus are at the repo root.
+    systemProperty("repo.root", repoRoot.asFile.absolutePath)
+    // Regenerate the cross-editor golden files: -Dconformance.update=true
+    providers.systemProperty("conformance.update").orNull?.let {
+        systemProperty("conformance.update", it)
+        outputs.upToDateWhen { false }
+    }
     testLogging {
         events("failed")
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL

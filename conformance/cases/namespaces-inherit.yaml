@@ -1,0 +1,19 @@
+# An entity's own namespace is the default for its references, and a reference that names a
+# namespace explicitly reaches across.
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: orders
+  namespace: retail
+spec:
+  owner: orders-team                   # -> group:retail/orders-team
+  domain: commerce                     # -> domain:retail/commerce
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: orders
+  namespace: wholesale
+spec:
+  owner: group:retail/orders-team      # the same group as above
+  domain: domain:retail/commerce       # the same domain as above

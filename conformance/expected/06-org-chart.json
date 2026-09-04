@@ -1,0 +1,29 @@
+{
+  "nodes": [
+    {"ref": "group:default/engineering", "kind": "Group", "title": "Engineering", "type": "department", "lifecycle": null, "tags": [], "external": false},
+    {"ref": "group:default/platform", "kind": "Group", "title": "Platform", "type": "team", "lifecycle": null, "tags": [], "external": false},
+    {"ref": "group:default/product", "kind": "Group", "title": "Product", "type": "team", "lifecycle": null, "tags": [], "external": false},
+    {"ref": "group:default/security", "kind": "Group", "title": "Security", "type": "team", "lifecycle": null, "tags": [], "external": false},
+    {"ref": "user:default/alan.turing", "kind": "User", "title": "Alan Turing", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "user:default/grace.hopper", "kind": "User", "title": "Grace Hopper", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "user:default/katherine.johnson", "kind": "User", "title": "katherine.johnson", "type": null, "lifecycle": null, "tags": [], "external": true}
+  ],
+  "edges": [
+    {"from": "group:default/engineering", "to": "group:default/platform", "type": "parentOf"},
+    {"from": "group:default/engineering", "to": "group:default/product", "type": "parentOf"},
+    {"from": "group:default/platform", "to": "group:default/engineering", "type": "childOf"},
+    {"from": "group:default/platform", "to": "user:default/grace.hopper", "type": "hasMember"},
+    {"from": "group:default/product", "to": "group:default/engineering", "type": "childOf"},
+    {"from": "group:default/product", "to": "user:default/alan.turing", "type": "hasMember"},
+    {"from": "group:default/product", "to": "user:default/katherine.johnson", "type": "hasMember"},
+    {"from": "group:default/security", "to": "group:default/engineering", "type": "childOf"},
+    {"from": "user:default/alan.turing", "to": "group:default/product", "type": "memberOf"},
+    {"from": "user:default/grace.hopper", "to": "group:default/platform", "type": "memberOf"}
+  ],
+  "problems": [
+  ],
+  "layers": [
+    ["group:default/engineering", "group:default/platform", "group:default/product", "group:default/security"],
+    ["user:default/grace.hopper", "user:default/alan.turing", "user:default/katherine.johnson"]
+  ]
+}

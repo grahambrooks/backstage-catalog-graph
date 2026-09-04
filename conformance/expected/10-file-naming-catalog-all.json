@@ -1,0 +1,15 @@
+{
+  "nodes": [
+    {"ref": "group:default/payments-team", "kind": "Group", "title": "payments-team", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "system:default/payments", "kind": "System", "title": "Payments", "type": null, "lifecycle": null, "tags": [], "external": false}
+  ],
+  "edges": [
+    {"from": "system:default/payments", "to": "group:default/payments-team", "type": "ownedBy"}
+  ],
+  "problems": [
+  ],
+  "layers": [
+    ["system:default/payments"],
+    ["group:default/payments-team"]
+  ]
+}

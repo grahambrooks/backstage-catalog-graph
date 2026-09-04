@@ -1,0 +1,109 @@
+{
+  "name": "backstage-catalog-graph",
+  "displayName": "Backstage Catalog Graph",
+  "description": "Visualise a Backstage catalog-info.yaml as the catalog graph it describes, with placeholders for external references.",
+  "version": "2026.9.4",
+  "publisher": "grahambrooks",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "backstage",
+    "catalog-info",
+    "software catalog",
+    "graph",
+    "idp"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/grahambrooks/jetbrains-backstage-plugin.git",
+    "directory": "editors/vscode"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:yaml"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "backstageCatalogGraph.showToSide",
+        "title": "Show Catalog Graph to the Side",
+        "category": "Backstage",
+        "icon": "$(type-hierarchy)"
+      },
+      {
+        "command": "backstageCatalogGraph.show",
+        "title": "Show Catalog Graph",
+        "category": "Backstage"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "backstageCatalogGraph.showToSide",
+          "when": "backstageCatalogGraph.isCatalogFile",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "backstageCatalogGraph.showToSide",
+          "when": "backstageCatalogGraph.isCatalogFile"
+        },
+        {
+          "command": "backstageCatalogGraph.show",
+          "when": "backstageCatalogGraph.isCatalogFile"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "backstageCatalogGraph.show",
+          "when": "resourceFilename =~ /^(.*\\.)?catalog-info\\.ya?ml$|^catalog-(all|entities)\\.ya?ml$/",
+          "group": "navigation@10"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Backstage Catalog Graph",
+      "properties": {
+        "backstageCatalogGraph.showExternalReferences": {
+          "type": "boolean",
+          "default": true,
+          "description": "Draw placeholder nodes for entities referenced by the file but declared elsewhere."
+        },
+        "backstageCatalogGraph.rebuildDelayMs": {
+          "type": "number",
+          "default": 350,
+          "minimum": 0,
+          "maximum": 5000,
+          "description": "How long to wait after a keystroke before redrawing the graph."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc --project tsconfig.json",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "bundle": "node esbuild.mjs",
+    "test": "npm run compile && node --test out-test/test/",
+    "lint": "tsc --project tsconfig.json --noEmit",
+    "package": "npm run bundle:production && vsce package --out backstage-catalog-graph-$npm_package_version.vsix",
+    "vscode:prepublish": "npm run bundle:production",
+    "bundle:production": "node esbuild.mjs --production"
+  },
+  "dependencies": {
+    "yaml": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.2.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.0"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "nodes": [
+    {"ref": "domain:retail/commerce", "kind": "Domain", "title": "commerce", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "group:retail/orders-team", "kind": "Group", "title": "orders-team", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "system:retail/orders", "kind": "System", "title": "orders", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "system:wholesale/orders", "kind": "System", "title": "orders", "type": null, "lifecycle": null, "tags": [], "external": false}
+  ],
+  "edges": [
+    {"from": "system:retail/orders", "to": "group:retail/orders-team", "type": "ownedBy"},
+    {"from": "system:retail/orders", "to": "domain:retail/commerce", "type": "partOf"},
+    {"from": "system:wholesale/orders", "to": "group:retail/orders-team", "type": "ownedBy"},
+    {"from": "system:wholesale/orders", "to": "domain:retail/commerce", "type": "partOf"}
+  ],
+  "problems": [
+  ],
+  "layers": [
+    ["domain:retail/commerce"],
+    ["system:retail/orders", "system:wholesale/orders"],
+    ["group:retail/orders-team"]
+  ]
+}

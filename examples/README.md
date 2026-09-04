@@ -1,15 +1,20 @@
 # Examples
 
-A manual test plan for the plugin. Each directory holds one descriptor that isolates one thing
-worth checking, with the counts you should see and the interactions to try.
+A manual test plan, shared by every editor. Each directory holds one descriptor that isolates
+one thing worth checking, with the counts you should see and the interactions to try.
 
-```bash
-./gradlew runIde
-```
+These same descriptors are the inputs to the automated
+[conformance corpus](../conformance/README.md), so what you check by hand and what CI checks are
+the same files.
 
-Then, in the sandbox IDE, **File → Open** this repository and open the files below. Each should
-open with a **Text** / **Backstage Catalog** split; the counts appear in the bottom-right of the
-graph pane.
+**VS Code** — press <kbd>F5</kbd> from the repository root to launch an Extension Development
+Host with this directory open, then open a file below and click **Show Catalog Graph to the
+Side** in the editor title bar.
+
+**JetBrains** — `cd editors/jetbrains && ./gradlew runIde`, which opens this directory as the
+sandbox project. Each file below opens with a **Text** / **Backstage Catalog** split.
+
+In both, the counts appear at the bottom right of the graph pane.
 
 The counts in this table are asserted by `ExamplesTest`, so if what you see disagrees with what
 is written here, the plugin is wrong, not the example.
@@ -59,7 +64,7 @@ bottom of the layout. Check it still centres and that **Fit to Window** does som
 `(+3 more)`; hovering it lists all four. Two solid nodes remain. The surviving `duplicated`
 node should be titled **Second definition** — the later declaration wins.
 
-**08-large-catalog** — **Fit to Window** should bring all 37 entities into view. Ctrl/Cmd-scroll
+**08-large-catalog** — **Fit** should bring all 37 entities into view. Ctrl/Cmd-scroll
 zooms about the cursor, plain scroll pans vertically, Shift-scroll horizontally, and dragging
 pans. Click a node: everything outside its neighbourhood should dim.
 
@@ -71,7 +76,12 @@ with **no** catalog tab.
 
 ## Adding an example
 
-Add the directory and file, then add a row to `expectations` in
-`src/test/kotlin/com/grahambrooks/backstage/catalog/ExamplesTest.kt` and to the table above.
-The test fails if a catalog file in this tree is missing from that list, so the plan cannot
-silently drift from the tree.
+Add the directory and file, then:
+
+1. Add a row to `expectations` in
+   `editors/jetbrains/src/test/kotlin/com/grahambrooks/backstage/catalog/ExamplesTest.kt` and to
+   the table above. That test fails if a catalog file in this tree is missing from the list, so
+   the plan cannot silently drift from the tree.
+2. Add it to [`conformance/manifest.json`](../conformance/manifest.json) and regenerate the
+   goldens, so every editor is checked against it:
+   `cd editors/jetbrains && ./gradlew test -Dconformance.update=true`

@@ -1,0 +1,162 @@
+import { deepStrictEqual, equal, ok } from 'node:assert/strict';
+import { describe, test } from 'node:test';
+
+import { isCatalogFileName, matchesBaseName } from '../core/catalogFiles';
+import { buildCatalogGraph } from '../core/catalogGraphBuilder';
+import { declaredNodes, externalNodes, keyOf } from '../core/catalogGraph';
+import { formatRef, parseRef, shortLabel } from '../core/entityRef';
+import { readDocuments } from '../core/yamlDocuments';
+import { fromWire, toWire } from '../core/wire';
+
+/**
+ * Unit tests for behaviour the shared conformance corpus does not cover: filename matching,
+ * source offsets, and the extension-host-to-webview wire format. Everything about how a
+ * descriptor is *interpreted* is covered by `conformance.test.ts` instead, so that it is tested
+ * once, against the same corpus as the other editors.
+ */
+
+describe('entity references', () => {
+  test('a bare name takes the default kind and namespace', () => {
+    deepStrictEqual(parseRef('payments', 'system'), {
+      kind: 'system',
+      namespace: 'default',
+      name: 'payments',
+    });
+  });
+
+  test('text that cannot be a reference is rejected rather than guessed at', () => {
+    for (const input of ['', '   ', 'two words', 'component:', ':name']) {
+      equal(parseRef(input, 'component'), undefined, `should reject ${JSON.stringify(input)}`);
+    }
+  });
+
+  test('short label omits the default namespace only', () => {
+    equal(shortLabel({ kind: 'component', namespace: 'default', name: 'x' }), 'component:x');
+    equal(shortLabel({ kind: 'component', namespace: 'retail', name: 'x' }), 'component:retail/x');
+  });
+});
+
+describe('catalog file names', () => {
+  test('the conventional names are recognised', () => {
+    ok(isCatalogFileName('catalog-info.yaml'));
+    ok(isCatalogFileName('catalog-info.yml'));
+    ok(isCatalogFileName('CATALOG-INFO.YAML'));
+    ok(isCatalogFileName('payments.catalog-info.yaml'));
+    ok(isCatalogFileName('catalog-all.yaml'));
+    ok(isCatalogFileName('catalog-entities.yaml'));
+  });
+
+  test('ordinary YAML files are left alone', () => {
+    for (const name of ['app-config.yaml', 'all.yaml', 'catalog.yaml', 'info.yml']) {
+      ok(!isCatalogFileName(name), `${name} should not match`);
+    }
+  });
+
+  test('non-YAML extensions never match', () => {
+    ok(!isCatalogFileName('catalog-info.json'));
+    ok(!isCatalogFileName('catalog-info'));
+  });
+
+  test('base-name matching agrees with the JetBrains implementation', () => {
+    ok(matchesBaseName('catalog-info'));
+    ok(!matchesBaseName('catalog'));
+  });
+});
+
+describe('source offsets', () => {
+  const text = [
+    'apiVersion: backstage.io/v1alpha1',
+    'kind: Component',
+    'metadata:',
+    '  name: first',
+    '---',
+    'apiVersion: backstage.io/v1alpha1',
+    'kind: Component',
+    'metadata:',
+    '  name: second',
+    '',
+  ].join('\n');
+
+  test('each document reports where it starts, so nodes can carry the caret back', () => {
+    const documents = readDocuments(text);
+    equal(documents.length, 2);
+    equal(documents[0].offset, 0);
+    // The second document's range starts at its `---` separator, which is what you want the
+    // caret to land on: the top of that entity's block, not its first key.
+    ok(documents[1].offset > 0, 'the second document should not start at zero');
+    ok(text.slice(documents[1].offset).startsWith('---'));
+    ok(text.slice(documents[1].offset).includes('name: second'));
+  });
+
+  test('declared nodes carry an offset and placeholders do not', () => {
+    const graph = buildCatalogGraph(
+      readDocuments('kind: Component\nmetadata:\n  name: a\nspec:\n  owner: group:b\n'),
+    );
+    equal(declaredNodes(graph).length, 1);
+    ok(declaredNodes(graph)[0].sourceOffset !== undefined);
+    equal(externalNodes(graph).length, 1);
+    equal(externalNodes(graph)[0].sourceOffset, undefined);
+  });
+
+  test('a comment-only file is not a broken file', () => {
+    const graph = buildCatalogGraph(readDocuments('# nothing here yet\n'));
+    equal(graph.nodes.size, 0);
+    equal(graph.problems.length, 0);
+  });
+});
+
+describe('wire format', () => {
+  const graph = buildCatalogGraph(
+    readDocuments(
+      [
+        'kind: Component',
+        'metadata:',
+        '  name: web',
+        '  title: Web',
+        '  tags: [ts]',
+        'spec:',
+        '  type: website',
+        '  lifecycle: production',
+        '  owner: group:team',
+        '',
+      ].join('\n'),
+    ),
+  );
+
+  test('a graph survives the round trip to the webview', () => {
+    const restored = fromWire(toWire(graph));
+
+    equal(restored.nodes.size, graph.nodes.size);
+    deepStrictEqual([...restored.nodes.keys()], [...graph.nodes.keys()]);
+    deepStrictEqual(restored.edges, graph.edges);
+
+    for (const [key, original] of graph.nodes) {
+      const copy = restored.nodes.get(key);
+      ok(copy, `missing ${key}`);
+      equal(formatRef(copy.ref), formatRef(original.ref));
+      equal(copy.kind.displayName, original.kind.displayName);
+      equal(copy.kind.rank, original.kind.rank);
+      equal(copy.title, original.title);
+      equal(copy.type, original.type);
+      equal(copy.lifecycle, original.lifecycle);
+      equal(copy.external, original.external);
+      deepStrictEqual([...copy.tags], [...original.tags]);
+    }
+  });
+
+  test('keys are the canonical reference, so the webview can match edges to nodes', () => {
+    for (const [key, node] of graph.nodes) {
+      equal(key, keyOf(node.ref));
+    }
+    for (const edge of graph.edges) {
+      ok(graph.nodes.has(edge.from), `edge from ${edge.from} has no node`);
+      ok(graph.nodes.has(edge.to), `edge to ${edge.to} has no node`);
+    }
+  });
+
+  test('the payload is structured-clone safe', () => {
+    // postMessage structured-clones; a Map or a class instance would not survive.
+    const wire = toWire(graph);
+    deepStrictEqual(JSON.parse(JSON.stringify(wire)), wire);
+  });
+});

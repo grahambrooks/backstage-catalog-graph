@@ -18,22 +18,41 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: editors/vscode/package-lock.json
+
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Build, test and verify
-        run: ./gradlew build verifyPlugin packageTestKit
-
-      - name: Check the tag matches pluginVersion
+      # Both editors are versioned together, so a tag that matches one but not the other is a
+      # mistake worth failing on before anything is published.
+      - name: Check the tag matches both editors
         run: |
           tag="${GITHUB_REF_NAME#v}"
-          declared="$(grep -E '^pluginVersion' gradle.properties | cut -d= -f2 | tr -d ' ')"
-          if [ "$tag" != "$declared" ]; then
-            echo "Tag $tag does not match pluginVersion $declared in gradle.properties" >&2
-            exit 1
-          fi
+          jetbrains="$(grep -E '^pluginVersion' editors/jetbrains/gradle.properties | cut -d= -f2 | tr -d ' ')"
+          vscode="$(node -p "require('./editors/vscode/package.json').version")"
+          echo "tag=$tag jetbrains=$jetbrains vscode=$vscode"
+          [ "$tag" = "$jetbrains" ] || { echo "::error::tag $tag != editors/jetbrains $jetbrains"; exit 1; }
+          [ "$tag" = "$vscode" ]    || { echo "::error::tag $tag != editors/vscode $vscode"; exit 1; }
+
+      - name: Build JetBrains plugin
+        working-directory: editors/jetbrains
+        run: ./gradlew build verifyPlugin packageTestKit
+
+      - name: Build VS Code extension
+        working-directory: editors/vscode
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+          npm run package
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/distributions/*.zip
+          files: |
+            editors/jetbrains/build/distributions/*.zip
+            editors/vscode/*.vsix
           generate_release_notes: true

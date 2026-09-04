@@ -1,0 +1,22 @@
+# Fields that Backstage documents as lists are frequently written as a bare scalar. Both
+# spellings must produce the same edges, and `tags` must survive either shape.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: scalar-form
+  tags: production
+spec:
+  dependsOn: resource:default/db
+  providesApis: api:default/one
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: list-form
+  tags:
+    - production
+spec:
+  dependsOn:
+    - resource:default/db
+  providesApis:
+    - api:default/one

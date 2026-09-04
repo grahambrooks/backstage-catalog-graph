@@ -1,0 +1,16 @@
+{
+  "nodes": [
+    {"ref": "component:default/checkout", "kind": "Component", "title": "Checkout", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "group:default/platform", "kind": "Group", "title": "platform", "type": null, "lifecycle": null, "tags": [], "external": true}
+  ],
+  "edges": [
+    {"from": "component:default/checkout", "to": "component:default/checkout", "type": "dependsOn"},
+    {"from": "component:default/checkout", "to": "group:default/platform", "type": "ownedBy"}
+  ],
+  "problems": [
+  ],
+  "layers": [
+    ["component:default/checkout"],
+    ["group:default/platform"]
+  ]
+}

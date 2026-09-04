@@ -1,0 +1,15 @@
+{
+  "nodes": [
+    {"ref": "component:default/payments-service", "kind": "Component", "title": "Payments Service", "type": "service", "lifecycle": "production", "tags": [], "external": false},
+    {"ref": "group:default/payments-team", "kind": "Group", "title": "payments-team", "type": null, "lifecycle": null, "tags": [], "external": true}
+  ],
+  "edges": [
+    {"from": "component:default/payments-service", "to": "group:default/payments-team", "type": "ownedBy"}
+  ],
+  "problems": [
+  ],
+  "layers": [
+    ["component:default/payments-service"],
+    ["group:default/payments-team"]
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "nodes": [
+    {"ref": "component:default/storefront-web", "kind": "Component", "title": "Storefront Web", "type": "website", "lifecycle": "production", "tags": ["typescript"], "external": false},
+    {"ref": "group:default/storefront-team", "kind": "Group", "title": "storefront-team", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "system:default/storefront", "kind": "System", "title": "storefront", "type": null, "lifecycle": null, "tags": [], "external": true}
+  ],
+  "edges": [
+    {"from": "component:default/storefront-web", "to": "group:default/storefront-team", "type": "ownedBy"},
+    {"from": "component:default/storefront-web", "to": "system:default/storefront", "type": "partOf"}
+  ],
+  "problems": [
+  ],
+  "layers": [
+    ["system:default/storefront"],
+    ["component:default/storefront-web"],
+    ["group:default/storefront-team"]
+  ]
+}

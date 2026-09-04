@@ -1,0 +1,23 @@
+{
+  "nodes": [
+    {"ref": "component:default/duplicated", "kind": "Component", "title": "Second definition", "type": "library", "lifecycle": null, "tags": [], "external": false},
+    {"ref": "component:default/readable", "kind": "Component", "title": "Readable", "type": "service", "lifecycle": "production", "tags": [], "external": false},
+    {"ref": "group:default/platform", "kind": "Group", "title": "platform", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "system:default/storefront", "kind": "System", "title": "storefront", "type": null, "lifecycle": null, "tags": [], "external": true}
+  ],
+  "edges": [
+    {"from": "component:default/duplicated", "to": "group:default/platform", "type": "ownedBy"},
+    {"from": "component:default/readable", "to": "system:default/storefront", "type": "partOf"}
+  ],
+  "problems": [
+    "Component has no `metadata.name` and was skipped",
+    "Document has no `kind` and was skipped",
+    "Duplicate entity component:duplicated -- the later definition is shown",
+    "component:readable: cannot read \"the platform team\" in spec.owner as an entity reference"
+  ],
+  "layers": [
+    ["system:default/storefront"],
+    ["component:default/readable", "component:default/duplicated"],
+    ["group:default/platform"]
+  ]
+}

@@ -1,7 +1,8 @@
 # Changelog
 
-All notable changes to the Backstage Catalog Graph plugin.
-Versions are CalVer (`YYYY.M.D`).
+Notable changes across all editor implementations. Versions are CalVer (`YYYY.M.D`) and are kept
+in step between editors. The VS Code extension also carries
+[its own changelog](editors/vscode/CHANGELOG.md), because the marketplace displays it.
 
 ## [Unreleased]
 
@@ -9,22 +10,31 @@ Versions are CalVer (`YYYY.M.D`).
 
 ### Added
 
-- Split `Text` / `Backstage Catalog` editor for `catalog-info.yaml` files.
-- Entity graph built from every YAML document in the file, laid out by entity kind.
-- Relations derived from `spec.owner`, `system`, `domain`, `subcomponentOf`, `parent`,
-  `children`, `members`, `memberOf`, `providesApis`, `consumesApis`, `dependsOn` and
-  `dependencyOf`.
-- Dashed placeholder nodes for entities referenced by the file but declared elsewhere.
-- Zoom, pan, neighbourhood highlighting, and double-click navigation to a declaration.
-- Inline reporting of descriptor problems (missing `kind`, missing `metadata.name`,
-  duplicate entities, unreadable references).
-- `examples/` — a manual test plan of ten scenarios, with expected counts held in place by
-  `ExamplesTest`.
-- `runIde` opens `examples/` as its project; `-PopenFile=<path>` opens a specific descriptor.
-- `packageTestKit` builds a bundle (plugin + examples + `TESTING.md`) for testing elsewhere.
+- **VS Code extension** ([`editors/vscode`](editors/vscode)) — the catalog graph in a webview
+  beside the descriptor, opened from the editor title bar, command palette or explorer context
+  menu. Same layout, colours and interactions as the JetBrains plugin. Also installs in Cursor,
+  Windsurf, VSCodium, Theia and Codespaces.
+- **Cross-editor conformance corpus** ([`conformance/`](conformance/spec.md)) — a normative spec
+  plus 18 cases with golden documents, run by both implementations in their own language and CI.
+  A disagreement about what a descriptor means now fails a test.
+- **JetBrains plugin** ([`editors/jetbrains`](editors/jetbrains)) — split `Text` / `Backstage
+  Catalog` editor for `catalog-info.yaml`, entities laid out by kind, relations from every
+  documented `spec` field, dashed placeholders for references the file does not declare, zoom,
+  pan, neighbourhood highlighting, double-click to a declaration, and inline problem reporting.
+- [`examples/`](examples/README.md) — ten scenarios doubling as the manual test plan, with
+  expected counts asserted by both implementations.
+- [`ROADMAP.md`](ROADMAP.md) — which editors come next, and the reasoning.
+- `packageTestKit` (JetBrains) and `npm run package` (VS Code) build artifacts for testing on
+  another machine.
+
+### Changed
+
+- Repository reorganised around `editors/<name>/`, `conformance/` and `examples/`. The JetBrains
+  Gradle project moved to `editors/jetbrains/` unchanged; `examples/` and `conformance/` are
+  shared and live at the root.
 
 ### Fixed
 
-- The graph no longer forces a PSI commit from `selectNotify` and the debounce alarm, which are
-  write-unsafe contexts; opening a catalog file logged a SEVERE "Write-unsafe context" error and
-  named the plugin as the cause. The rebuild now waits for the PSI to catch up instead.
+- The JetBrains graph no longer forces a PSI commit from `selectNotify` or the debounce alarm,
+  which are write-unsafe contexts; opening a catalog file logged a SEVERE "Write-unsafe context"
+  error naming the plugin. The rebuild now waits for the PSI to catch up.

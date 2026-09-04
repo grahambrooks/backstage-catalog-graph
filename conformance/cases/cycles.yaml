@@ -1,0 +1,19 @@
+# A dependency cycle and a self-reference. Layout must terminate and every node must be placed.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: alpha
+spec:
+  owner: group:platform
+  dependsOn:
+    - component:default/beta
+    - component:default/alpha          # self-reference
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: beta
+spec:
+  owner: group:platform
+  dependsOn:
+    - component:default/alpha

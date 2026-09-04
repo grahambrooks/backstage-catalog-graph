@@ -121,6 +121,7 @@ class ExamplesTest {
     )
 
     private companion object {
-        val EXAMPLES: Path = Path.of("examples")
+        /** Set by the Gradle `test` task -- the examples are shared with the other editors. */
+        val EXAMPLES: Path = Path.of(System.getProperty("repo.root", "../..")).resolve("examples")
     }
 }

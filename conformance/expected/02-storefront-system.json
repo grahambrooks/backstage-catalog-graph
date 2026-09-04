@@ -1,0 +1,46 @@
+{
+  "nodes": [
+    {"ref": "api:default/checkout-api", "kind": "API", "title": "Checkout API", "type": "openapi", "lifecycle": "production", "tags": [], "external": false},
+    {"ref": "api:default/payments-api", "kind": "API", "title": "payments-api", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "component:default/checkout-service", "kind": "Component", "title": "Checkout Service", "type": "service", "lifecycle": "production", "tags": [], "external": false},
+    {"ref": "component:default/checkout-web", "kind": "Component", "title": "Checkout Web", "type": "website", "lifecycle": "production", "tags": ["typescript", "frontend"], "external": false},
+    {"ref": "domain:default/retail", "kind": "Domain", "title": "Retail", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "group:default/checkout-team", "kind": "Group", "title": "Checkout Team", "type": "team", "lifecycle": null, "tags": [], "external": false},
+    {"ref": "group:default/platform-engineering", "kind": "Group", "title": "platform-engineering", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "group:default/retail-leadership", "kind": "Group", "title": "retail-leadership", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "resource:default/checkout-db", "kind": "Resource", "title": "Checkout Database", "type": "database", "lifecycle": null, "tags": [], "external": false},
+    {"ref": "resource:default/shared-kafka", "kind": "Resource", "title": "shared-kafka", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "system:default/checkout", "kind": "System", "title": "Checkout", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "user:default/jane.doe", "kind": "User", "title": "jane.doe", "type": null, "lifecycle": null, "tags": [], "external": true}
+  ],
+  "edges": [
+    {"from": "api:default/checkout-api", "to": "group:default/checkout-team", "type": "ownedBy"},
+    {"from": "api:default/checkout-api", "to": "system:default/checkout", "type": "partOf"},
+    {"from": "component:default/checkout-service", "to": "resource:default/checkout-db", "type": "dependsOn"},
+    {"from": "component:default/checkout-service", "to": "resource:default/shared-kafka", "type": "dependsOn"},
+    {"from": "component:default/checkout-service", "to": "group:default/checkout-team", "type": "ownedBy"},
+    {"from": "component:default/checkout-service", "to": "system:default/checkout", "type": "partOf"},
+    {"from": "component:default/checkout-service", "to": "api:default/checkout-api", "type": "providesApi"},
+    {"from": "component:default/checkout-web", "to": "api:default/checkout-api", "type": "consumesApi"},
+    {"from": "component:default/checkout-web", "to": "api:default/payments-api", "type": "consumesApi"},
+    {"from": "component:default/checkout-web", "to": "group:default/checkout-team", "type": "ownedBy"},
+    {"from": "component:default/checkout-web", "to": "system:default/checkout", "type": "partOf"},
+    {"from": "domain:default/retail", "to": "group:default/retail-leadership", "type": "ownedBy"},
+    {"from": "group:default/checkout-team", "to": "group:default/platform-engineering", "type": "childOf"},
+    {"from": "group:default/checkout-team", "to": "user:default/jane.doe", "type": "hasMember"},
+    {"from": "resource:default/checkout-db", "to": "group:default/checkout-team", "type": "ownedBy"},
+    {"from": "resource:default/checkout-db", "to": "system:default/checkout", "type": "partOf"},
+    {"from": "system:default/checkout", "to": "group:default/checkout-team", "type": "ownedBy"},
+    {"from": "system:default/checkout", "to": "domain:default/retail", "type": "partOf"}
+  ],
+  "problems": [
+  ],
+  "layers": [
+    ["domain:default/retail"],
+    ["system:default/checkout"],
+    ["component:default/checkout-service", "component:default/checkout-web"],
+    ["resource:default/checkout-db", "api:default/checkout-api", "resource:default/shared-kafka", "api:default/payments-api"],
+    ["group:default/checkout-team", "group:default/platform-engineering", "group:default/retail-leadership"],
+    ["user:default/jane.doe"]
+  ]
+}
