@@ -90,11 +90,12 @@
     "compile": "tsc --project tsconfig.json",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "bundle": "node esbuild.mjs",
+    "bundle:production": "node esbuild.mjs --production",
+    "watch": "node esbuild.mjs --watch",
     "test": "npm run compile && node --test out-test/test/",
     "lint": "tsc --project tsconfig.json --noEmit",
     "package": "npm run bundle:production && vsce package --out backstage-catalog-graph-$npm_package_version.vsix",
-    "vscode:prepublish": "npm run bundle:production",
-    "bundle:production": "node esbuild.mjs --production"
+    "vscode:prepublish": "npm run bundle:production"
   },
   "dependencies": {
     "yaml": "^2.6.0"

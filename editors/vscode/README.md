@@ -53,19 +53,119 @@ Edge labels appear above roughly 75% zoom and are hidden below it, on purpose.
 - **No `Location` target expansion.** `spec.targets` holds paths and URLs, not entity references.
 - **No editing.** The graph is a view; the YAML is edited as YAML.
 
+## Testing it locally
+
+Two ways, for two different questions.
+
+### Trying out a change — Extension Development Host
+
+A second VS Code window running the extension straight from source. This is the loop to use
+while working on it.
+
+```bash
+cd editors/vscode
+npm install
+npm run bundle
+```
+
+Then either press <kbd>F5</kbd> with the **repository root** open in VS Code — the bundled
+launch configuration builds first and opens `examples/` for you — or start it from the command
+line:
+
+```bash
+# from editors/vscode
+code --extensionDevelopmentPath="$PWD" --new-window ../../examples
+```
+
+A new window opens with `examples/` as its workspace. Open `01-minimal/catalog-info.yaml` and
+click **Show Catalog Graph to the Side** in the editor title bar.
+
+After changing anything under `src/`, rebuild and then run **Developer: Reload Window**
+(<kbd>Cmd/Ctrl</kbd>+<kbd>R</kbd>) in the development host — VS Code does not re-read the bundle
+on its own. Leave a rebuild running in a second terminal so only the reload is manual:
+
+```bash
+npm run watch
+```
+
+To keep the development host away from your real settings and installed extensions — worth
+doing if you want to see the extension behave the way a new user would:
+
+```bash
+code --extensionDevelopmentPath="$PWD" \
+     --user-data-dir=/tmp/bcg-profile --extensions-dir=/tmp/bcg-extensions \
+     --new-window ../../examples
+```
+
+### Testing a build the way a user gets it — install the VSIX
+
+This exercises the packaged artifact: minified bundle, real activation events, real install path.
+It is what to do before handing a build to someone else.
+
+```bash
+cd editors/vscode
+npm run package                                             # -> backstage-catalog-graph-<version>.vsix
+code --install-extension backstage-catalog-graph-*.vsix --force
+```
+
+Restart VS Code, then open any descriptor under [`examples/`](../../examples/README.md).
+
+When you are done:
+
+```bash
+code --uninstall-extension grahambrooks.backstage-catalog-graph
+```
+
+The same VSIX installs in Cursor, Windsurf and VSCodium — substitute `cursor`, `windsurf` or
+`codium` for `code` above.
+
+### What to check
+
+[`examples/README.md`](../../examples/README.md) is the test plan: ten scenarios, each with the
+exact entity, placeholder, relation and problem counts it should produce, and the interactions
+to try in each. The counts are asserted by the automated tests, so if what you see on screen
+disagrees with what is written there, the bug is in the plugin and not in the example.
+
+A quick pass, if you only have a few minutes:
+
+| Open | Expect |
+|---|---|
+| `01-minimal` | 1 solid node, 2 dashed; hover a dashed one for *Referenced but not defined in this file* |
+| `03-external-references` | Untick **External references**; all but one isolated node should vanish |
+| `04-all-relations` | Zoom past ~75%; every edge should carry its relation name |
+| `07-malformed` | A warning in the toolbar reading the first problem and `(+3 more)`, and two nodes still drawn |
+| `08-large-catalog` | **Fit**, then click a node — everything outside its neighbourhood dims |
+
+Double-click any solid node: the caret should land on that entity in the YAML pane.
+
+### Automated tests
+
+```bash
+npm test        # unit tests, plus the cross-editor conformance corpus
+npm run typecheck
+```
+
+`npm test` runs the corpus in [`../../conformance`](../../conformance/README.md) — the same
+cases, and the same golden documents, that the JetBrains implementation is checked against. If
+it passes here and there, both editors agree about what a descriptor means.
+
 ## Developing
 
 ```bash
 npm install
-npm test        # unit tests + the cross-editor conformance corpus
-npm run bundle  # out/extension.js and out/webview.js
-npm run package # backstage-catalog-graph-<version>.vsix
+npm test               # unit tests + the cross-editor conformance corpus
+npm run typecheck
+npm run bundle         # out/extension.js and out/webview.js, with sourcemaps
+npm run watch          # the same, rebuilding on save
+npm run package        # minified, then backstage-catalog-graph-<version>.vsix
 ```
 
-Press <kbd>F5</kbd> in VS Code to launch an Extension Development Host, then open anything under
-[`examples/`](../../examples/README.md).
-
 Nothing under `src/core/` may import `vscode`: that is what lets the conformance corpus run it
-in plain Node. How a descriptor is interpreted is specified in
+in plain Node, and what would let it move to a language server later. Rendering lives in
+`src/webview/`, which runs in a browser context and must not import `vscode` either — it talks
+to the extension host over `postMessage`, through the wire format in `src/core/wire.ts`.
+
+How a descriptor is interpreted is specified in
 [`conformance/spec.md`](../../conformance/spec.md) and pinned by a corpus shared with the
-JetBrains implementation — see the [repository README](../../README.md).
+JetBrains implementation. Changing that behaviour means changing the spec and regenerating the
+goldens — see the [repository README](../../README.md).
