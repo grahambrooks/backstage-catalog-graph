@@ -40,7 +40,7 @@ jobs:
       - name: Package
         run: npx vsce package --out backstage-catalog-graph-${{ github.sha }}.vsix
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: vscode-extension
           path: editors/vscode/*.vsix
