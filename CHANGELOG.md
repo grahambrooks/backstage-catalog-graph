@@ -6,6 +6,53 @@ in step between editors. The VS Code extension also carries
 
 ## [Unreleased]
 
+## [2026.10.18]
+
+### Added
+
+- **Owners as badges** (default on) — each entity's owner is a pill on the entity instead of an
+  `ownedBy` edge running down to the Group layer; a placeholder that was only an owner is not
+  drawn.
+- **Edges coloured by relation**, inverse pairs sharing a colour, with the relations drawn listed
+  in the legend.
+- **Group by System** — each System drawn as a box around the entities that are part of it.
+- **Focus on Selection** — draw only the selected entity and what it is joined to, following the
+  selection.
+- **Outline** — the catalog as a tree of kind, entity and relations.
+- **Find** (Ctrl/Cmd+F) — select and reveal entities by title or reference.
+- **Two-way sync with the YAML** — moving the caret selects the entity under it; clicking a node
+  selects the YAML that defines it.
+- **Keyboard** — arrows move between nodes, Enter jumps to the YAML, Escape deselects, + − 0 zoom.
+- **Problems list** — the warning is clickable and lists every problem, each jumping to its line.
+- A root `Makefile` for building packages and launching each editor for hands-on testing.
+- **`AiResource`** (alpha kind, Backstage 1.51+) — drawn in the API/Resource layer in its own
+  colour. A skill's `dependsOn` defaults to `AiResource`; a plugin's `skills` and a marketplace's
+  `plugins` draw the new `hasPart` relation, and that hierarchy draws as rows. New example
+  `11-ai-resources`.
+- **`Domain.spec.subdomainOf`** — a nested domain now draws `partOf` into its parent.
+
+### Changed
+
+- A hierarchy inside one layer — Groups with a `parent`, subcomponents — is drawn as rows,
+  parents above children, so those edges run vertically.
+- Edges are routed through the gaps in the rows they cross instead of over the nodes there, and
+  edges within one row arc over it. Rows wider than about 1200px wrap.
+- Fit to Window can zoom out to 10%, so a catalog of a few dozen entities fits whole, and a file
+  opens fitted to the pane.
+- Conformance runners read the layout's logical layers rather than grouping nodes by position.
+- **Contract:** `dependsOn` and `dependencyOf` on anything but an `AiResource` no longer assume
+  `Component`. As in Backstage, a reference there must name its kind; a bare name is reported as
+  a problem and draws no edge. Fields are now scoped by kind, so `skills`/`plugins` mean nothing
+  outside an `AiResource`. New conformance case `case-kind-scoped-fields`; goldens for
+  `04-all-relations` and `case-ref-forms` regenerated.
+
+### Fixed
+
+- The JetBrains graph painted outside its own pane, over the project panel, once it was larger
+  than the pane.
+- In VS Code, clicking a node did nothing: the pan handler captured the pointer, so the click
+  went to the canvas and cleared the selection.
+
 ## [2026.9.4]
 
 ### Added

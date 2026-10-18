@@ -2,7 +2,7 @@
   "name": "backstage-catalog-graph",
   "displayName": "Backstage Catalog Graph",
   "description": "Visualise a Backstage catalog-info.yaml as the catalog graph it describes, with placeholders for external references.",
-  "version": "2026.9.4",
+  "version": "2026.10.18",
   "publisher": "grahambrooks",
   "license": "MIT",
   "engines": {
