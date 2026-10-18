@@ -1,0 +1,42 @@
+editors/vscode/src/graphPanel.ts
+  s_ccff39c7afa1ba::t_ea2ba42ee98e4e 200-202
+CLAUDE.md
+  s_ccff39c7afa1ba::t_1c7fe31e9d0209 60,74
+editors/jetbrains/TESTING.md
+  s_ccff39c7afa1ba::t_470616608fd6e7 59-60
+editors/vscode/src/webview/main.ts
+  s_ccff39c7afa1ba::t_ea2ba42ee98e4e 20,60-61,80,90-92,155-159,204,251-255,316-326,728,731-735,740-747,848,863-865
+editors/vscode/README.md
+  s_ccff39c7afa1ba::t_470616608fd6e7 33-34
+editors/vscode/src/core/focus.ts
+  s_ccff39c7afa1ba::t_42891f213648f3 1-32
+editors/vscode/src/test/core.test.ts
+  s_ccff39c7afa1ba::t_42891f213648f3 8,281-332
+  s_ccff39c7afa1ba::t_19d78ff3ae0e9a 333
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphView.kt
+  s_ccff39c7afa1ba::t_fbc04da24dc474 100,221-225,290-291
+editors/vscode/src/core/index.ts
+  s_ccff39c7afa1ba::t_42891f213648f3 16
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphPanel.kt
+  s_ccff39c7afa1ba::t_fbc04da24dc474 7,69-74,85,144-157,168-169,171,193,233-237,251-253,599-602
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/model/Focus.kt
+  s_ccff39c7afa1ba::t_540e9ab1a40239 1-25
+editors/jetbrains/src/test/kotlin/com/grahambrooks/backstage/catalog/model/FocusTest.kt
+  s_ccff39c7afa1ba::t_540e9ab1a40239 1-48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "07dc58511064f3b87d535cef8ebca13f8d215695",
+  "prompts": {},
+  "sessions": {
+    "s_ccff39c7afa1ba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "077998fa-6922-450c-91cb-7db0d67c3e3c",
+        "model": "unknown"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
