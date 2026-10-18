@@ -1,0 +1,23 @@
+editors/vscode/src/webview/main.ts
+  s_ccff39c7afa1ba::t_a9d5e5c1f6b9ac 814
+  s_ccff39c7afa1ba::t_ecf573c6e11b29 871-875
+  s_ccff39c7afa1ba::t_0c04b793e2771e 815-816
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogOutline.kt
+  s_ccff39c7afa1ba::t_ecf573c6e11b29 26-28,40-42
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "80f7b6e0ae47c1530f0ddce608463b37334bcc16",
+  "prompts": {},
+  "sessions": {
+    "s_ccff39c7afa1ba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "077998fa-6922-450c-91cb-7db0d67c3e3c",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
