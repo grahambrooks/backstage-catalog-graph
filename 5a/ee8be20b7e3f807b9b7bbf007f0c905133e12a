@@ -1,0 +1,60 @@
+editors/vscode/CHANGELOG.md
+  s_ccff39c7afa1ba::t_705cde2f0fbbe4 25-27
+renovate.json
+  s_ccff39c7afa1ba::t_2736c6f0d1c15e 1-26
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphView.kt
+  s_ccff39c7afa1ba::t_3ba70641a78e47 26,41,274-275,318,373
+.github/workflows/build-jetbrains.yml
+  s_ccff39c7afa1ba::t_53c49cea8c1356 11-14,27,29,34,46,51
+.github/workflows/release.yml
+  s_ccff39c7afa1ba::t_513868c05ddfff 52-63,70
+  s_ccff39c7afa1ba::t_53c49cea8c1356 14,16,21,27,65
+Makefile
+  s_ccff39c7afa1ba::t_3ae1a88cce0acb 27,40,44-47,97
+examples/README.md
+  s_ccff39c7afa1ba::t_09929c7700d5af 41-52,68,84
+  s_ccff39c7afa1ba::t_705cde2f0fbbe4 80-81
+conformance/spec.md
+  s_ccff39c7afa1ba::t_705cde2f0fbbe4 138-141
+editors/vscode/README.md
+  s_ccff39c7afa1ba::t_705cde2f0fbbe4 139
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphPanel.kt
+  s_ccff39c7afa1ba::t_3ba70641a78e47 16,47,205-209,420,542,546,647-648,876,878
+.github/workflows/publish-marketplace.yml
+  s_ccff39c7afa1ba::t_53c49cea8c1356 32,34,40,53
+  s_ccff39c7afa1ba::t_513868c05ddfff 3-4,23-25
+  s_ccff39c7afa1ba::t_ee7a275b4aa586 26
+editors/vscode/src/webview/main.ts
+  s_ccff39c7afa1ba::t_3ba70641a78e47 65,67-68,181-182,1033,1035
+editors/jetbrains/TESTING.md
+  s_ccff39c7afa1ba::t_705cde2f0fbbe4 42
+editors/vscode/package.json
+  s_ccff39c7afa1ba::t_54972047b4d4a1 108-109
+  s_ccff39c7afa1ba::t_7a80249cf59436 101
+editors/jetbrains/gradle.properties
+  s_ccff39c7afa1ba::t_705cde2f0fbbe4 5
+.github/workflows/lint-workflows.yml
+  s_ccff39c7afa1ba::t_513868c05ddfff 1-23
+.github/workflows/build-vscode.yml
+  s_ccff39c7afa1ba::t_53c49cea8c1356 11-14,27,29,47
+CHANGELOG.md
+  s_ccff39c7afa1ba::t_52029b4dd4142d 48-51
+editors/vscode/package-lock.json
+  s_ccff39c7afa1ba::t_7f1cbdbe22dcf7 15-16,1010-1012,1034-1036
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5aee8be20b7e3f807b9b7bbf007f0c905133e12a",
+  "prompts": {},
+  "sessions": {
+    "s_ccff39c7afa1ba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "077998fa-6922-450c-91cb-7db0d67c3e3c",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
