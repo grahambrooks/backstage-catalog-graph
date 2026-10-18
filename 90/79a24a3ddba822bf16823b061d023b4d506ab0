@@ -1,0 +1,68 @@
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphView.kt
+  s_ccff39c7afa1ba::t_4a71a2ec0bb9a1 6,16-18,30-31,33,58-70,76-81,85,98-150,211,220
+editors/vscode/src/core/catalogGraph.ts
+  s_ccff39c7afa1ba::t_b376feaf267488 3,27-28
+  s_ccff39c7afa1ba::t_fc15e0558cc18f 94-111
+editors/vscode/src/webview/main.ts
+  s_ccff39c7afa1ba::t_cb21a9245850a6 5,77-78,86-89,104,106-109,146,151,155-266
+  s_ccff39c7afa1ba::t_b376feaf267488 423-427
+  s_ccff39c7afa1ba::t_1b1bcb8354d076 267
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/model/CatalogGraphBuilder.kt
+  s_ccff39c7afa1ba::t_9e5a6fc785e180 115
+editors/jetbrains/src/test/kotlin/com/grahambrooks/backstage/catalog/model/CatalogGraphBuilderTest.kt
+  s_ccff39c7afa1ba::t_fc009db3110b63 133-135,137,140,142
+  s_ccff39c7afa1ba::t_5465176e37b8b4 136,138-139,141
+editors/vscode/src/core/catalogGraphBuilder.ts
+  s_ccff39c7afa1ba::t_b376feaf267488 134
+editors/vscode/src/core/rawDocument.ts
+  s_ccff39c7afa1ba::t_b376feaf267488 12-22
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/psi/YamlDocumentReader.kt
+  s_ccff39c7afa1ba::t_9e5a6fc785e180 4,27
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/model/RawDocument.kt
+  s_ccff39c7afa1ba::t_9e5a6fc785e180 13-18,20-22
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphPanel.kt
+  s_ccff39c7afa1ba::t_500af0fa51f760 140-174
+editors/jetbrains/TESTING.md
+  s_ccff39c7afa1ba::t_adb2fedae10069 54-55
+  s_ccff39c7afa1ba::t_5f240fc58202f3 52
+editors/vscode/src/graphPanel.ts
+  s_ccff39c7afa1ba::t_b376feaf267488 103,110-119,124-125
+  s_ccff39c7afa1ba::t_cb21a9245850a6 70-80,203-204,282-288
+editors/vscode/src/test/core.test.ts
+  s_ccff39c7afa1ba::t_fc009db3110b63 6,104-114
+  s_ccff39c7afa1ba::t_b5465261a35bdc 93-103
+  s_ccff39c7afa1ba::t_f96d88b4cf609f 115
+editors/vscode/README.md
+  s_ccff39c7afa1ba::t_adb2fedae10069 28-29
+  s_ccff39c7afa1ba::t_5f240fc58202f3 26
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphFileEditor.kt
+  s_ccff39c7afa1ba::t_9e5a6fc785e180 18,146-150,152-155
+  s_ccff39c7afa1ba::t_5769e38737d507 156-157
+  s_ccff39c7afa1ba::t_655d579cd7b250 7,11-13,47-50,61-76,128
+CLAUDE.md
+  s_ccff39c7afa1ba::t_adb2fedae10069 60
+  s_ccff39c7afa1ba::t_5f240fc58202f3 74
+editors/vscode/src/core/wire.ts
+  s_ccff39c7afa1ba::t_b376feaf267488 24,54,74
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/model/CatalogGraph.kt
+  s_ccff39c7afa1ba::t_9e5a6fc785e180 27-28
+  s_ccff39c7afa1ba::t_a8aa7d4eb3b50d 70-79
+editors/vscode/src/core/yamlDocuments.ts
+  s_ccff39c7afa1ba::t_b376feaf267488 25-31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9079a24a3ddba822bf16823b061d023b4d506ab0",
+  "prompts": {},
+  "sessions": {
+    "s_ccff39c7afa1ba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "077998fa-6922-450c-91cb-7db0d67c3e3c",
+        "model": "unknown"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
