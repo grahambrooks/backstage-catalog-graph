@@ -1,0 +1,19 @@
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphView.kt
+  s_ccff39c7afa1ba::t_a25e257c4df640 98-100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "36e5a1ad47cba1361c6939292929d552241909df",
+  "prompts": {},
+  "sessions": {
+    "s_ccff39c7afa1ba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "077998fa-6922-450c-91cb-7db0d67c3e3c",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
