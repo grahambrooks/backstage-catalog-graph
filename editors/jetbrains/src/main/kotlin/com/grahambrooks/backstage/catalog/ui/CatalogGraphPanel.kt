@@ -4,6 +4,7 @@ import com.grahambrooks.backstage.catalog.model.CatalogEdge
 import com.grahambrooks.backstage.catalog.model.CatalogGraph
 import com.grahambrooks.backstage.catalog.model.CatalogNode
 import com.grahambrooks.backstage.catalog.model.EntityRef
+import com.grahambrooks.backstage.catalog.model.OwnerBadges
 import com.grahambrooks.backstage.catalog.layout.GraphLayout
 import com.grahambrooks.backstage.catalog.layout.LayeredLayout
 import com.grahambrooks.backstage.catalog.layout.NodeBounds
@@ -25,6 +26,7 @@ import java.awt.event.MouseEvent
 import java.awt.event.MouseWheelEvent
 import java.awt.geom.AffineTransform
 import java.awt.geom.CubicCurve2D
+import java.awt.geom.Ellipse2D
 import java.awt.geom.NoninvertibleTransformException
 import java.awt.geom.Path2D
 import java.awt.geom.Point2D
@@ -53,6 +55,14 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
     var onSelectionChanged: ((CatalogNode?) -> Unit)? = null
 
     private var graph: CatalogGraph = CatalogGraph.EMPTY
+
+    /** What is actually laid out and painted: [graph] after the external and owner toggles. */
+    var drawnGraph: CatalogGraph = CatalogGraph.EMPTY
+        private set
+    private var allOwners: Map<EntityRef, List<CatalogNode>> = emptyMap()
+
+    /** Owners drawn as badges: [allOwners] while the toggle is on, otherwise nothing. */
+    private var owners: Map<EntityRef, List<CatalogNode>> = emptyMap()
     private var layout: GraphLayout = GraphLayout.EMPTY
 
     private var scale: Double = 1.0
@@ -64,6 +74,7 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
     private var highlighted: Set<EntityRef> = emptySet()
 
     private var showExternal: Boolean = true
+    private var ownersAsBadges: Boolean = true
 
     /** Set when a fit was asked for before the panel had a size to fit into. */
     private var fitPending: Boolean = false
@@ -113,6 +124,15 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
 
     fun isShowingExternal(): Boolean = showExternal
 
+    fun setOwnersAsBadges(badges: Boolean) {
+        if (ownersAsBadges == badges) return
+        ownersAsBadges = badges
+        rebuildLayout()
+        repaint()
+    }
+
+    fun isShowingOwnersAsBadges(): Boolean = ownersAsBadges
+
     fun zoomBy(factor: Double) {
         zoomAround(factor, Point2D.Double(width / 2.0, height / 2.0))
     }
@@ -147,17 +167,29 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
     }
 
     private fun rebuildLayout() {
+        // Badges come from the whole graph: an owner written in this file is a fact about the
+        // entity, not a placeholder, so hiding external references does not hide it.
+        allOwners = OwnerBadges.fold(graph).owners
+        owners = if (ownersAsBadges) allOwners else emptyMap()
+        drawnGraph = if (ownersAsBadges) OwnerBadges.fold(visibleGraph()).graph else visibleGraph()
+
         val metrics = getFontMetrics(titleFont())
         val subMetrics = getFontMetrics(subtitleFont())
+        val badgeMetrics = getFontMetrics(labelFont())
         val engine = LayeredLayout(sizer = { node ->
             val titleWidth = metrics.stringWidth(node.title).toDouble()
             val subtitleWidth = subMetrics.stringWidth(subtitleOf(node)).toDouble()
-            val width = (max(titleWidth, subtitleWidth) + TEXT_INSET * 2 + ACCENT_WIDTH)
+            val badge = badgeText(node.ref)
+            val badgeWidth = badge?.let { badgeMetrics.stringWidth(it) + BADGE_CHROME } ?: 0.0
+            val width = (maxOf(titleWidth, subtitleWidth, badgeWidth) + TEXT_INSET * 2 + ACCENT_WIDTH)
                 .coerceIn(MIN_NODE_WIDTH, MAX_NODE_WIDTH)
-            width to NODE_HEIGHT
+            width to if (badge == null) NODE_HEIGHT else NODE_HEIGHT_WITH_BADGE
         })
-        layout = engine.layout(visibleGraph())
+        layout = engine.layout(drawnGraph)
     }
+
+    private fun badgeText(ref: EntityRef): String? =
+        owners[ref]?.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.title }
 
     private fun centreContent() {
         originX = (width - layout.width * scale) / 2
@@ -193,8 +225,7 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
 
             g2.transform(viewTransform())
 
-            val visible = visibleGraph()
-            for (edge in visible.edges) paintEdge(g2, edge)
+            for (edge in drawnGraph.edges) paintEdge(g2, edge)
             for (bounds in layout.nodes.values) paintNode(g2, bounds)
         } finally {
             g2.dispose()
@@ -281,7 +312,45 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
             (bounds.y + 39).toFloat(),
         )
 
+        badgeText(node.ref)?.let { paintOwnerBadge(g2, bounds, it, available) }
+
         g2.composite = composite
+    }
+
+    /**
+     * A pill under the subtitle naming the owner, tinted with the owner's kind. It replaces the
+     * `ownedBy` edge, so it carries the same dashed outline when the owner is a placeholder.
+     */
+    private fun paintOwnerBadge(g2: Graphics2D, bounds: NodeBounds, text: String, available: Int) {
+        val owner = owners.getValue(bounds.node.ref).first()
+        g2.font = labelFont()
+        val metrics = g2.fontMetrics
+        val label = truncate(text, g2, (available - BADGE_CHROME).toInt())
+        val x = bounds.x + ACCENT_WIDTH + TEXT_INSET - BADGE_PADDING / 2
+        val y = bounds.y + BADGE_TOP
+        val pill = RoundRectangle2D.Double(
+            x, y, metrics.stringWidth(label) + BADGE_CHROME, BADGE_HEIGHT, BADGE_HEIGHT, BADGE_HEIGHT,
+        )
+
+        g2.color = CatalogPalette.tintFor(owner.kind, 44)
+        g2.fill(pill)
+        if (owner.external) {
+            g2.color = CatalogPalette.externalBorder
+            g2.stroke = BasicStroke(1f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 4f, BADGE_DASH, 0f)
+            g2.draw(pill)
+        }
+
+        g2.color = CatalogPalette.accentFor(owner.kind)
+        val dot = BADGE_HEIGHT - 8
+        g2.fill(Ellipse2D.Double(x + BADGE_PADDING, y + 4, dot, dot))
+
+        g2.color = CatalogPalette.title
+        if (owner.external) g2.font = labelFont().deriveFont(Font.ITALIC)
+        g2.drawString(
+            label,
+            (x + BADGE_PADDING + dot + BADGE_GAP).toFloat(),
+            (y + (BADGE_HEIGHT + metrics.ascent - metrics.descent) / 2).toFloat(),
+        )
     }
 
     private fun paintEdge(g2: Graphics2D, edge: CatalogEdge) {
@@ -293,11 +362,13 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         if (!active) g2.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, DIM_ALPHA)
 
         val dangling = edge.isDangling(graph.nodes)
-        g2.color = if (highlighted.isNotEmpty() && active) CatalogPalette.edgeHighlight else CatalogPalette.edge
+        // The relation keeps its colour when highlighted; a selection thickens it instead.
+        val emphasis = if (highlighted.isNotEmpty() && active) 0.9f else 0f
+        g2.color = CatalogPalette.relationColour(edge.type)
         g2.stroke = if (dangling) {
-            BasicStroke(1.3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 4f, EXTERNAL_DASH, 0f)
+            BasicStroke(1.3f + emphasis, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 4f, EXTERNAL_DASH, 0f)
         } else {
-            BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)
+            BasicStroke(1.5f + emphasis, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)
         }
 
         val (start, end) = anchors(from, to)
@@ -501,6 +572,9 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
                 node.type?.let { add("type: $it") }
                 node.lifecycle?.let { add("lifecycle: $it") }
                 if (node.tags.isNotEmpty()) add("tags: ${node.tags.joinToString(", ")}")
+                allOwners[node.ref]?.let { list ->
+                    add("owner: ${list.joinToString(", ") { it.ref.toString() }}")
+                }
             }
             if (facts.isNotEmpty()) {
                 append("<br/><br/>").append(escape(facts.joinToString(" &middot; ")))
@@ -546,6 +620,13 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
 
     private companion object {
         const val NODE_HEIGHT = 52.0
+        const val NODE_HEIGHT_WITH_BADGE = 70.0
+        const val BADGE_TOP = 47.0
+        const val BADGE_HEIGHT = 16.0
+        const val BADGE_PADDING = 6.0
+        const val BADGE_GAP = 4.0
+        /** Padding both sides, the kind dot and the gap after it. */
+        const val BADGE_CHROME = BADGE_PADDING * 2 + (BADGE_HEIGHT - 8) + BADGE_GAP
         const val MIN_NODE_WIDTH = 150.0
         const val MAX_NODE_WIDTH = 320.0
         const val ACCENT_WIDTH = 5.0
@@ -563,5 +644,6 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         const val LABEL_SCALE_THRESHOLD = 0.72
         const val DIM_ALPHA = 0.22f
         val EXTERNAL_DASH = floatArrayOf(5f, 4f)
+        val BADGE_DASH = floatArrayOf(3f, 2f)
     }
 }

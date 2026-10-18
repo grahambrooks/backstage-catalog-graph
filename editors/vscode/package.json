@@ -76,6 +76,11 @@
           "default": true,
           "description": "Draw placeholder nodes for entities referenced by the file but declared elsewhere."
         },
+        "backstageCatalogGraph.ownersAsBadges": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show each entity's owner as a badge on the entity instead of drawing an ownedBy edge to it."
+        },
         "backstageCatalogGraph.rebuildDelayMs": {
           "type": "number",
           "default": 350,

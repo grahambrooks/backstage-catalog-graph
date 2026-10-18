@@ -16,8 +16,10 @@ import {
   layoutGraph,
   right,
 } from '../core/layeredLayout';
+import { foldOwners } from '../core/ownerBadges';
+import { SPEC_RULES } from '../core/relationType';
 import { WireGraph, fromWire } from '../core/wire';
-import { accentFor, tintFor } from './palette';
+import { accentFor, relationColour, tintFor } from './palette';
 
 /**
  * The catalog canvas.
@@ -32,6 +34,14 @@ import { accentFor, tintFor } from './palette';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const NODE_HEIGHT = 52;
+const NODE_HEIGHT_WITH_BADGE = 70;
+const BADGE_TOP = 47;
+const BADGE_HEIGHT = 16;
+const BADGE_PADDING = 6;
+const BADGE_GAP = 4;
+const BADGE_DOT = BADGE_HEIGHT - 8;
+/** Padding both sides, the kind dot and the gap after it. */
+const BADGE_CHROME = BADGE_PADDING * 2 + BADGE_DOT + BADGE_GAP;
 const MIN_NODE_WIDTH = 150;
 const MAX_NODE_WIDTH = 320;
 const ACCENT_WIDTH = 5;
@@ -41,7 +51,8 @@ const CURVE_TENSION = 0.45;
 const ARROW_LENGTH = 9;
 const ARROW_SPREAD = 0.42;
 const ZOOM_STEP = 1.12;
-const MIN_SCALE = 0.25;
+// Low enough that Fit to Window can show a catalog of a few dozen entities whole.
+const MIN_SCALE = 0.1;
 const MAX_SCALE = 3;
 const WHEEL_PAN_STEP = 48;
 const LABEL_SCALE_THRESHOLD = 0.72;
@@ -61,6 +72,7 @@ const statusLabel = document.getElementById('status') as HTMLElement;
 const legendLabel = document.getElementById('legend') as HTMLElement;
 const problemsLabel = document.getElementById('problems') as HTMLElement;
 const externalCheckbox = document.getElementById('external') as HTMLInputElement;
+const ownersCheckbox = document.getElementById('owners') as HTMLInputElement;
 
 let graph: CatalogGraph = { nodes: new Map(), edges: [], problems: [] };
 let layout: GraphLayout = { nodes: new Map(), width: 0, height: 0 };
@@ -68,11 +80,21 @@ let viewport: Viewport = { scale: 1, originX: 0, originY: 0 };
 let selected: string | undefined;
 let highlighted = new Set<string>();
 let showExternal = true;
+let ownersAsBadges = true;
+/** Every entity's owners, from the whole graph. */
+let allOwners: ReadonlyMap<string, readonly CatalogNode[]> = new Map();
+/** Owners drawn as badges: `allOwners` while the toggle is on, otherwise nothing. */
+let owners: ReadonlyMap<string, readonly CatalogNode[]> = new Map();
 
 // --- Message plumbing ---------------------------------------------------------------------
 
 window.addEventListener('message', (event: MessageEvent) => {
-  const message = event.data as { command?: string; graph?: WireGraph; showExternal?: boolean };
+  const message = event.data as {
+    command?: string;
+    graph?: WireGraph;
+    showExternal?: boolean;
+    ownersAsBadges?: boolean;
+  };
   if (message.command !== 'render' || !message.graph) {
     return;
   }
@@ -81,6 +103,10 @@ window.addEventListener('message', (event: MessageEvent) => {
   if (typeof message.showExternal === 'boolean') {
     showExternal = message.showExternal;
     externalCheckbox.checked = showExternal;
+  }
+  if (typeof message.ownersAsBadges === 'boolean') {
+    ownersAsBadges = message.ownersAsBadges;
+    ownersCheckbox.checked = ownersAsBadges;
   }
   if (selected && !graph.nodes.has(selected)) {
     select(undefined);
@@ -104,6 +130,10 @@ byId('actual').addEventListener('click', () => {
 byId('reload').addEventListener('click', () => vscode.postMessage({ command: 'reload' }));
 externalCheckbox.addEventListener('change', () => {
   showExternal = externalCheckbox.checked;
+  render();
+});
+ownersCheckbox.addEventListener('change', () => {
+  ownersAsBadges = ownersCheckbox.checked;
   render();
 });
 window.addEventListener('resize', () => applyViewport());
@@ -130,8 +160,17 @@ function visibleGraph(): CatalogGraph {
   };
 }
 
+/** What is actually laid out and painted: the graph after the external and owner toggles. */
+function drawnGraph(): CatalogGraph {
+  // Badges come from the whole graph: an owner written in this file is a fact about the entity,
+  // not a placeholder, so hiding external references does not hide it.
+  allOwners = foldOwners(graph).owners;
+  owners = ownersAsBadges ? allOwners : new Map();
+  return ownersAsBadges ? foldOwners(visibleGraph()).graph : visibleGraph();
+}
+
 function render(): void {
-  const visible = visibleGraph();
+  const visible = drawnGraph();
   layout = layoutGraph(visible, measure);
 
   while (svg.firstChild) {
@@ -187,11 +226,18 @@ const measureText = (() => {
 function measure(node: CatalogNode): { width: number; height: number } {
   const titleWidth = measureText(node.title, 'title');
   const subtitleWidth = measureText(subtitleOf(node), 'subtitle');
-  const width = Math.max(titleWidth, subtitleWidth) + TEXT_INSET * 2 + ACCENT_WIDTH;
+  const badge = badgeText(keyOf(node));
+  const badgeWidth = badge === undefined ? 0 : measureText(badge, 'badge') + BADGE_CHROME;
+  const width = Math.max(titleWidth, subtitleWidth, badgeWidth) + TEXT_INSET * 2 + ACCENT_WIDTH;
   return {
     width: Math.min(MAX_NODE_WIDTH, Math.max(MIN_NODE_WIDTH, width)),
-    height: NODE_HEIGHT,
+    height: badge === undefined ? NODE_HEIGHT : NODE_HEIGHT_WITH_BADGE,
   };
+}
+
+function badgeText(key: string): string | undefined {
+  const list = owners.get(key);
+  return list && list.length > 0 ? list.map((owner) => owner.title).join(', ') : undefined;
 }
 
 function renderNode(bounds: NodeBounds): SVGGElement {
@@ -231,6 +277,11 @@ function renderNode(bounds: NodeBounds): SVGGElement {
     ),
   );
 
+  const badge = badgeText(keyFor(bounds));
+  if (badge !== undefined) {
+    group.appendChild(renderOwnerBadge(bounds, badge));
+  }
+
   const tooltip = document.createElementNS(SVG_NS, 'title');
   tooltip.textContent = tooltipFor(node);
   group.appendChild(tooltip);
@@ -247,6 +298,47 @@ function renderNode(bounds: NodeBounds): SVGGElement {
   });
   group.addEventListener('mouseenter', () => group.classList.add('hovered'));
   group.addEventListener('mouseleave', () => group.classList.remove('hovered'));
+
+  return group;
+}
+
+/**
+ * A pill under the subtitle naming the owner, tinted with the owner's kind. It replaces the
+ * `ownedBy` edge, so it carries the same dashed outline when the owner is a placeholder.
+ */
+function renderOwnerBadge(bounds: NodeBounds, label: string): SVGGElement {
+  const owner = (owners.get(keyFor(bounds)) ?? [])[0];
+  const kind = owner.kind.displayName;
+  const text = truncate(label, 'badge', bounds.width - BADGE_CHROME);
+  const x = bounds.x + ACCENT_WIDTH + TEXT_INSET - BADGE_PADDING / 2;
+  const y = bounds.y + BADGE_TOP;
+
+  const group = document.createElementNS(SVG_NS, 'g');
+  group.setAttribute('class', `badge${owner.external ? ' external' : ''}`);
+
+  const pill = document.createElementNS(SVG_NS, 'rect');
+  pill.setAttribute('x', String(x));
+  pill.setAttribute('y', String(y));
+  pill.setAttribute('width', String(measureText(text, 'badge') + BADGE_CHROME));
+  pill.setAttribute('height', String(BADGE_HEIGHT));
+  pill.setAttribute('rx', String(BADGE_HEIGHT / 2));
+  pill.setAttribute('fill', tintFor(kind, 0.17));
+  group.appendChild(pill);
+
+  const dot = document.createElementNS(SVG_NS, 'circle');
+  dot.setAttribute('cx', String(x + BADGE_PADDING + BADGE_DOT / 2));
+  dot.setAttribute('cy', String(y + BADGE_HEIGHT / 2));
+  dot.setAttribute('r', String(BADGE_DOT / 2));
+  dot.setAttribute('fill', accentFor(kind));
+  group.appendChild(dot);
+
+  const caption = document.createElementNS(SVG_NS, 'text');
+  caption.setAttribute('x', String(x + BADGE_PADDING + BADGE_DOT + BADGE_GAP));
+  caption.setAttribute('y', String(y + BADGE_HEIGHT / 2));
+  caption.setAttribute('dominant-baseline', 'central');
+  caption.setAttribute('class', 'badge');
+  caption.textContent = text;
+  group.appendChild(caption);
 
   return group;
 }
@@ -289,6 +381,8 @@ function renderEdge(
 
   const group = document.createElementNS(SVG_NS, 'g');
   group.setAttribute('class', `edge${dangling ? ' dangling' : ''}`);
+  // Read by the stylesheet, so a highlighted edge keeps its relation colour.
+  group.style.setProperty('--relation', relationColour(relation));
   group.dataset.from = fromKey;
   group.dataset.to = toKey;
 
@@ -434,14 +528,28 @@ function renderLegend(visible: CatalogGraph): void {
   const kinds = [...new Map([...visible.nodes.values()].map((n) => [n.kind.displayName, n.kind]))]
     .sort((a, b) => a[1].rank - b[1].rank)
     .map(([name]) => name);
+  const present = new Set(visible.edges.map((edge) => edge.type));
+  const relations = SPEC_RULES.map((rule) => rule.relation).filter(
+    (relation, index, all) => present.has(relation) && all.indexOf(relation) === index,
+  );
 
+  const entry = (swatch: HTMLElement, label: string): HTMLElement => {
+    const element = document.createElement('span');
+    element.append(swatch, document.createTextNode(label));
+    return element;
+  };
   legendLabel.replaceChildren(
     ...kinds.map((kind) => {
-      const entry = document.createElement('span');
       const swatch = document.createElement('i');
       swatch.style.background = accentFor(kind);
-      entry.append(swatch, document.createTextNode(kind));
-      return entry;
+      return entry(swatch, kind);
+    }),
+    ...(relations.length > 0 ? [document.createElement('b')] : []),
+    ...relations.map((relation) => {
+      const swatch = document.createElement('i');
+      swatch.className = 'relation';
+      swatch.style.background = relationColour(relation);
+      return entry(swatch, relation);
     }),
   );
 }
@@ -622,6 +730,10 @@ function tooltipFor(node: CatalogNode): string {
   if (node.tags.length > 0) {
     facts.push(`tags: ${node.tags.join(', ')}`);
   }
+  const owned = allOwners.get(keyOf(node));
+  if (owned && owned.length > 0) {
+    facts.push(`owner: ${owned.map((owner) => keyOf(owner)).join(', ')}`);
+  }
   if (facts.length > 0) {
     lines.push('', facts.join(' · '));
   }
@@ -647,6 +759,9 @@ function truncate(value: string, className: string, boxWidth: number): string {
 }
 
 function keyFor(bounds: NodeBounds): string {
-  const ref = bounds.node.ref;
-  return `${ref.kind}:${ref.namespace}/${ref.name}`;
+  return keyOf(bounds.node);
+}
+
+function keyOf(node: CatalogNode): string {
+  return `${node.ref.kind}:${node.ref.namespace}/${node.ref.name}`;
 }

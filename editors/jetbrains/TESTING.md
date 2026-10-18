@@ -54,9 +54,12 @@ you have the plugin already.
 | Ctrl/Cmd + scroll | Zoom about the cursor |
 | Scroll / Shift + scroll | Pan vertically / horizontally |
 | Drag | Pan |
-| Toolbar | Zoom in/out, Fit to Window, Actual Size, Show External References, Reload |
+| Toolbar | Zoom in/out, Fit to Window, Actual Size, Show External References, Show Owners as Badges, Reload |
 
-Edge labels appear above roughly 75% zoom and are hidden below it, on purpose.
+Edge labels appear above roughly 75% zoom and are hidden below it, on purpose. Edges are coloured
+by relation, with inverse pairs (`childOf`/`parentOf`) sharing a colour, and the legend lists the
+relations drawn. With **Show Owners as Badges** on (the default) each entity's owner is a pill under its
+subtitle rather than an `ownedBy` edge, and a placeholder that was only an owner is not drawn.
 
 ## Reporting a problem
 

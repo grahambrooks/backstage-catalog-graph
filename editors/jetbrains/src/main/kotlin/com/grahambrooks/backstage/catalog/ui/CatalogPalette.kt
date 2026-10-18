@@ -1,11 +1,12 @@
 package com.grahambrooks.backstage.catalog.ui
 
 import com.grahambrooks.backstage.catalog.model.EntityKind
+import com.grahambrooks.backstage.catalog.model.RelationType
 import com.intellij.ui.JBColor
 import java.awt.Color
 
 /**
- * Colours for the graph, one accent per entity kind.
+ * Colours for the graph: one accent per entity kind, and one colour per relation family.
  *
  * Every colour is a [JBColor] so the graph reads correctly in both light and dark themes; the
  * dark variants are lightened rather than merely darkened, because a saturated mid-tone that
@@ -26,6 +27,33 @@ object CatalogPalette {
         EntityKind.OTHER to JBColor(Color(0x616161), Color(0x9E9E9E)),
     )
 
+    /**
+     * Inverse pairs share a colour -- `childOf`/`parentOf` say the same thing from opposite ends --
+     * so a picture zoomed too far out for labels still tells structure, ownership, membership,
+     * APIs and dependencies apart.
+     */
+    private val RELATIONS: Map<RelationType, JBColor> = run {
+        val ownership = JBColor(Color(0xAD1457), Color(0xF06292))
+        val structure = JBColor(Color(0x5C6BC0), Color(0x9FA8DA))
+        val hierarchy = JBColor(Color(0x8E24AA), Color(0xCE93D8))
+        val membership = JBColor(Color(0x2E7D32), Color(0x81C784))
+        val provides = JBColor(Color(0x00897B), Color(0x4DB6AC))
+        val consumes = JBColor(Color(0x0288D1), Color(0x4FC3F7))
+        val dependency = JBColor(Color(0xEF6C00), Color(0xFFB74D))
+        mapOf(
+            RelationType.OWNED_BY to ownership,
+            RelationType.PART_OF to structure,
+            RelationType.PARENT_OF to hierarchy,
+            RelationType.CHILD_OF to hierarchy,
+            RelationType.MEMBER_OF to membership,
+            RelationType.HAS_MEMBER to membership,
+            RelationType.PROVIDES_API to provides,
+            RelationType.CONSUMES_API to consumes,
+            RelationType.DEPENDS_ON to dependency,
+            RelationType.DEPENDENCY_OF to dependency,
+        )
+    }
+
     val background: JBColor = JBColor(Color(0xFBFCFD), Color(0x2B2D30))
     val nodeFill: JBColor = JBColor(Color(0xFFFFFF), Color(0x393B40))
     val nodeBorder: JBColor = JBColor(Color(0xD3D5DB), Color(0x4E5157))
@@ -39,6 +67,8 @@ object CatalogPalette {
     val problem: JBColor = JBColor(Color(0xC9211E), Color(0xF07C7A))
 
     fun accentFor(kind: EntityKind): Color = ACCENTS[kind] ?: ACCENTS.getValue(EntityKind.OTHER)
+
+    fun relationColour(type: RelationType): Color = RELATIONS.getValue(type)
 
     /** Same accent at low opacity, for the tint behind a node's title bar. */
     fun tintFor(kind: EntityKind, alpha: Int): Color =

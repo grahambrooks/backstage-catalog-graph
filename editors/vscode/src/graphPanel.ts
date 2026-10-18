@@ -128,6 +128,7 @@ export class CatalogGraphPanel {
       command: 'render',
       graph: toWire(graph),
       showExternal: this.showExternal(),
+      ownersAsBadges: this.ownersAsBadges(),
     });
   }
 
@@ -135,6 +136,12 @@ export class CatalogGraphPanel {
     return vscode.workspace
       .getConfiguration('backstageCatalogGraph')
       .get<boolean>('showExternalReferences', true);
+  }
+
+  private ownersAsBadges(): boolean {
+    return vscode.workspace
+      .getConfiguration('backstageCatalogGraph')
+      .get<boolean>('ownersAsBadges', true);
   }
 
   private rebuildDelay(): number {
@@ -169,6 +176,9 @@ export class CatalogGraphPanel {
     <span class="separator"></span>
     <label id="external-toggle" title="Show placeholders for entities referenced by this file but declared elsewhere">
       <input type="checkbox" id="external" checked> External references
+    </label>
+    <label id="owners-toggle" title="Show each entity's owner as a badge instead of drawing an ownedBy edge to it">
+      <input type="checkbox" id="owners" checked> Owners as badges
     </label>
     <span class="separator"></span>
     <button id="reload" title="Reload graph">Reload</button>
@@ -271,16 +281,21 @@ const STYLES = `
   .node text.title { fill: var(--vscode-foreground); }
   .node.external text.title { font-style: italic; }
   .node text.subtitle { fill: var(--vscode-descriptionForeground); }
-  .edge path { fill: none; stroke: var(--edge); stroke-width: 1.5; }
+  .edge path { fill: none; stroke: var(--relation, var(--edge)); stroke-width: 1.5; }
   .edge.dangling path { stroke-dasharray: 5 4; stroke-width: 1.3; }
-  .edge polygon { fill: var(--edge); }
+  .edge polygon { fill: var(--relation, var(--edge)); }
   .edge text {
     font-size: 10px; fill: var(--vscode-descriptionForeground); text-anchor: middle;
     paint-order: stroke; stroke: var(--vscode-editor-background); stroke-width: 3px;
   }
   .dimmed { opacity: 0.22; }
-  .edge.highlighted path, .edge.highlighted polygon { stroke: var(--accent); fill: none; }
-  .edge.highlighted polygon { fill: var(--accent); stroke: none; }
+  /* A highlighted edge keeps its relation colour; the selection thickens it instead. */
+  .edge.highlighted path { stroke-width: 2.4; }
+  .edge.dangling.highlighted path { stroke-width: 2.2; }
+  text.badge { font-size: 10px; }
+  .node text.badge { fill: var(--vscode-foreground); }
+  .node .badge.external rect { stroke: var(--external-border); stroke-dasharray: 3 2; }
+  .node .badge.external text { font-style: italic; }
   #empty-state {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
     color: var(--vscode-descriptionForeground); pointer-events: none;
@@ -288,4 +303,6 @@ const STYLES = `
   #legend { display: flex; gap: 12px; flex-wrap: wrap; }
   #legend span { display: inline-flex; align-items: center; gap: 4px; }
   #legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  #legend i.relation { width: 12px; height: 2px; border-radius: 1px; }
+  #legend b { width: 1px; height: 12px; background: var(--node-border); }
 `;

@@ -3,6 +3,7 @@ package com.grahambrooks.backstage.catalog.ui
 import com.grahambrooks.backstage.catalog.model.CatalogGraph
 import com.grahambrooks.backstage.catalog.model.CatalogNode
 import com.grahambrooks.backstage.catalog.model.EntityKind
+import com.grahambrooks.backstage.catalog.model.RelationType
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
@@ -71,11 +72,19 @@ class CatalogGraphView(
 
     fun show(graph: CatalogGraph, preserveViewport: Boolean) {
         canvas.setGraph(graph, preserveViewport)
-        legend.kinds = graph.nodes.values.map { it.kind }.distinct().sortedBy { it.rank }
-        legend.repaint()
+        updateLegend()
         updateProblems(graph)
         updateStatus(graph, selected = null)
         canvas.onSelectionChanged = { node -> updateStatus(graph, node) }
+    }
+
+    /** The legend describes what is drawn, so it follows the toolbar toggles as well as the file. */
+    private fun updateLegend() {
+        val drawn = canvas.drawnGraph
+        legend.kinds = drawn.nodes.values.map { it.kind }.distinct().sortedBy { it.rank }
+        legend.relations = drawn.edges.map { it.type }.distinct().sortedBy { it.ordinal }
+        legend.revalidate()
+        legend.repaint()
     }
 
     private fun updateProblems(graph: CatalogGraph) {
@@ -116,7 +125,18 @@ class CatalogGraphView(
         add(object : ToggleAction("Show External References", EXTERNAL_TOGGLE_HINT, AllIcons.Nodes.Related) {
             override fun getActionUpdateThread() = ActionUpdateThread.EDT
             override fun isSelected(event: AnActionEvent) = canvas.isShowingExternal()
-            override fun setSelected(event: AnActionEvent, state: Boolean) = canvas.setShowExternal(state)
+            override fun setSelected(event: AnActionEvent, state: Boolean) {
+                canvas.setShowExternal(state)
+                updateLegend()
+            }
+        })
+        add(object : ToggleAction("Show Owners as Badges", OWNER_TOGGLE_HINT, AllIcons.Nodes.Tag) {
+            override fun getActionUpdateThread() = ActionUpdateThread.EDT
+            override fun isSelected(event: AnActionEvent) = canvas.isShowingOwnersAsBadges()
+            override fun setSelected(event: AnActionEvent, state: Boolean) {
+                canvas.setOwnersAsBadges(state)
+                updateLegend()
+            }
         })
         add(Separator.getInstance())
         add(simpleAction("Reload Graph", AllIcons.Actions.Refresh) { onRefresh() })
@@ -128,9 +148,13 @@ class CatalogGraphView(
             override fun actionPerformed(event: AnActionEvent) = run()
         }
 
-    /** A compact key of the entity kinds actually present, so the accent colours mean something. */
+    /**
+     * A compact key of the entity kinds and relations actually drawn, so the accent and edge
+     * colours mean something.
+     */
     private class LegendStrip : JBPanel<LegendStrip>(FlowLayout(FlowLayout.LEFT, 12, 4)) {
         var kinds: List<EntityKind> = emptyList()
+        var relations: List<RelationType> = emptyList()
 
         init {
             border = BorderFactory.createEmptyBorder()
@@ -154,6 +178,20 @@ class CatalogGraphView(
                     g2.drawString(kind.displayName, x, baseline)
                     x += metrics.stringWidth(kind.displayName) + 14
                 }
+                if (relations.isNotEmpty()) {
+                    g2.color = CatalogPalette.nodeBorder
+                    g2.drawLine(x, height / 2 - 6, x, height / 2 + 6)
+                    x += 14
+                }
+                g2.stroke = java.awt.BasicStroke(2f)
+                for (relation in relations) {
+                    g2.color = CatalogPalette.relationColour(relation)
+                    g2.drawLine(x, height / 2, x + 12, height / 2)
+                    x += 16
+                    g2.color = CatalogPalette.subtitle
+                    g2.drawString(relation.displayName, x, baseline)
+                    x += metrics.stringWidth(relation.displayName) + 14
+                }
             } finally {
                 g2.dispose()
             }
@@ -164,5 +202,7 @@ class CatalogGraphView(
         const val TOOLBAR_PLACE = "BackstageCatalogGraphToolbar"
         const val EXTERNAL_TOGGLE_HINT =
             "Show placeholders for entities referenced by this file but defined elsewhere"
+        const val OWNER_TOGGLE_HINT =
+            "Show each entity's owner as a badge instead of drawing an ownedBy edge to it"
     }
 }

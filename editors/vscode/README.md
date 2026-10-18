@@ -28,9 +28,12 @@ The graph opens beside the file and follows it as you type.
 | Ctrl/Cmd + scroll | Zoom about the cursor |
 | Scroll / Shift + scroll | Pan vertically / horizontally |
 | Drag | Pan |
-| Toolbar | Zoom, Fit, Actual size, External references, Reload |
+| Toolbar | Zoom, Fit, Actual size, External references, Owners as badges, Reload |
 
-Edge labels appear above roughly 75% zoom and are hidden below it, on purpose.
+Edge labels appear above roughly 75% zoom and are hidden below it, on purpose. Edges are coloured
+by relation, with inverse pairs (`childOf`/`parentOf`) sharing a colour, and the legend lists the
+relations drawn. With **Owners as badges** on (the default) each entity's owner is a pill under its
+subtitle rather than an `ownedBy` edge, and a placeholder that was only an owner is not drawn.
 
 ## Files it offers the graph on
 
@@ -42,6 +45,7 @@ Edge labels appear above roughly 75% zoom and are hidden below it, on purpose.
 | Setting | Default | |
 |---|---|---|
 | `backstageCatalogGraph.showExternalReferences` | `true` | Draw placeholders for entities declared elsewhere |
+| `backstageCatalogGraph.ownersAsBadges` | `true` | Show owners as badges instead of `ownedBy` edges |
 | `backstageCatalogGraph.rebuildDelayMs` | `350` | How long to wait after a keystroke before redrawing |
 
 ## Deliberately not in scope

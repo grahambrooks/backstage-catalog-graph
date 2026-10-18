@@ -32,6 +32,45 @@ const DARK: Record<string, string> = {
 };
 
 /**
+ * One colour per relation family, the same as the JetBrains implementation. Inverse pairs share
+ * a colour -- `childOf`/`parentOf` say the same thing from opposite ends -- so a picture zoomed
+ * too far out for labels still tells structure, ownership, membership, APIs and dependencies
+ * apart.
+ */
+const RELATION_FAMILY: Record<string, string> = {
+  ownedBy: 'ownership',
+  partOf: 'structure',
+  parentOf: 'hierarchy',
+  childOf: 'hierarchy',
+  memberOf: 'membership',
+  hasMember: 'membership',
+  providesApi: 'provides',
+  consumesApi: 'consumes',
+  dependsOn: 'dependency',
+  dependencyOf: 'dependency',
+};
+
+const RELATION_LIGHT: Record<string, string> = {
+  ownership: '#ad1457',
+  structure: '#5c6bc0',
+  hierarchy: '#8e24aa',
+  membership: '#2e7d32',
+  provides: '#00897b',
+  consumes: '#0288d1',
+  dependency: '#ef6c00',
+};
+
+const RELATION_DARK: Record<string, string> = {
+  ownership: '#f06292',
+  structure: '#9fa8da',
+  hierarchy: '#ce93d8',
+  membership: '#81c784',
+  provides: '#4db6ac',
+  consumes: '#4fc3f7',
+  dependency: '#ffb74d',
+};
+
+/**
  * VS Code stamps `vscode-dark` or `vscode-high-contrast` on the body for dark themes, and
  * re-stamps it when the user switches theme, so this is read at paint time rather than cached.
  */
@@ -46,6 +85,11 @@ function isDark(): boolean {
 export function accentFor(kind: string): string {
   const palette = isDark() ? DARK : LIGHT;
   return palette[kind] ?? palette.Entity;
+}
+
+export function relationColour(relation: string): string {
+  const palette = isDark() ? RELATION_DARK : RELATION_LIGHT;
+  return palette[RELATION_FAMILY[relation] ?? 'structure'];
 }
 
 /** The accent at low opacity, for the tint behind a node. */

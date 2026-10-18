@@ -5,6 +5,7 @@ import { isCatalogFileName, matchesBaseName } from '../core/catalogFiles';
 import { buildCatalogGraph } from '../core/catalogGraphBuilder';
 import { declaredNodes, externalNodes, keyOf } from '../core/catalogGraph';
 import { formatRef, parseRef, shortLabel } from '../core/entityRef';
+import { foldOwners } from '../core/ownerBadges';
 import { readDocuments } from '../core/yamlDocuments';
 import { fromWire, toWire } from '../core/wire';
 
@@ -158,5 +159,58 @@ describe('wire format', () => {
     // postMessage structured-clones; a Map or a class instance would not survive.
     const wire = toWire(graph);
     deepStrictEqual(JSON.parse(JSON.stringify(wire)), wire);
+  });
+});
+
+describe('owner badges', () => {
+  const graph = buildCatalogGraph(
+    readDocuments(`
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata: { name: service }
+spec: { owner: team, providesApis: [service-api] }
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata: { name: service-api }
+spec: { owner: outsider }
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata: { name: worker }
+spec: { owner: org }
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata: { name: team }
+spec: { parent: org }
+`),
+  );
+  const folded = foldOwners(graph);
+  const titles = (key: string) => (folded.owners.get(key) ?? []).map((node) => node.title);
+
+  test('ownedBy edges become badges', () => {
+    deepStrictEqual(titles('component:default/service'), ['team']);
+    deepStrictEqual(titles('api:default/service-api'), ['outsider']);
+    ok(folded.graph.edges.every((edge) => edge.type !== 'ownedBy'));
+  });
+
+  test('other relations are kept', () => {
+    deepStrictEqual(
+      new Set(folded.graph.edges.map((edge) => edge.type)),
+      new Set(['providesApi', 'childOf']),
+    );
+  });
+
+  test('a placeholder that is only an owner is dropped', () => {
+    equal(folded.graph.nodes.has('group:default/outsider'), false);
+  });
+
+  test('a placeholder still joined by another relation stays', () => {
+    ok(folded.graph.nodes.has('group:default/org'));
+  });
+
+  test('a declared owner stays', () => {
+    ok(folded.graph.nodes.has('group:default/team'));
   });
 });
