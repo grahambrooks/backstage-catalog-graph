@@ -1,0 +1,23 @@
+{
+  "nodes": [
+    {"ref": "component:default/ca", "kind": "Component", "title": "ca", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "component:default/cb", "kind": "Component", "title": "cb", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "component:default/cc", "kind": "Component", "title": "cc", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "component:default/cd", "kind": "Component", "title": "cd", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "component:default/ce", "kind": "Component", "title": "ce", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "system:default/s0", "kind": "System", "title": "s0", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "system:default/s1", "kind": "System", "title": "s1", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "system:default/s2", "kind": "System", "title": "s2", "type": null, "lifecycle": null, "tags": [], "external": false}
+  ],
+  "edges": [
+    {"from": "component:default/cc", "to": "system:default/s1", "type": "partOf"},
+    {"from": "component:default/cd", "to": "system:default/s2", "type": "partOf"},
+    {"from": "component:default/ce", "to": "system:default/s0", "type": "partOf"}
+  ],
+  "problems": [
+  ],
+  "layers": [
+    ["system:default/s0", "system:default/s1", "system:default/s2"],
+    ["component:default/ca", "component:default/ce", "component:default/cc", "component:default/cb", "component:default/cd"]
+  ]
+}

@@ -99,6 +99,11 @@
       "id": "case-wrong-shapes",
       "input": "conformance/cases/wrong-shapes.yaml",
       "source": "case"
+    },
+    {
+      "id": "case-unlinked-ordering",
+      "input": "conformance/cases/unlinked-ordering.yaml",
+      "source": "case"
     }
   ]
 }

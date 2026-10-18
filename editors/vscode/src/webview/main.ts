@@ -147,12 +147,29 @@ window.addEventListener('message', (event: MessageEvent) => {
   }
   if (selected && !graph.nodes.has(selected)) {
     select(undefined);
+  } else if (selected) {
+    // The selection survived the edit, but its neighbours may not have.
+    highlighted = neighbourhoodOf(graph, selected);
   }
   render();
+  refreshMatches(false);
   if (!hadContent) {
     fitToWindow();
   }
 });
+
+// Colours are written into the SVG as attributes, so a theme switch -- which VS Code signals by
+// re-stamping the body's classes -- needs a repaint, not just new CSS.
+new MutationObserver(() => {
+  render();
+  renderOutlineIfShowing();
+}).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+function renderOutlineIfShowing(): void {
+  if (showingOutline) {
+    renderOutline();
+  }
+}
 
 // --- Toolbar ------------------------------------------------------------------------------
 
@@ -174,6 +191,7 @@ groupCheckbox.addEventListener('change', () => {
   groupBySystem = groupCheckbox.checked;
   render();
   fitToWindow();
+  refreshMatches(false);
 });
 outlineCheckbox.addEventListener('change', () => {
   showingOutline = outlineCheckbox.checked;
@@ -242,15 +260,23 @@ function matching(query: string): string[] {
 }
 
 function runFind(restart: boolean): void {
+  refreshMatches(restart);
+  const target = matches[matchIndex];
+  if (target) {
+    reveal(target, true);
+  }
+}
+
+/**
+ * Recomputes the matches and the "2 of 5" status without moving to one -- for when the graph
+ * changes under an unchanged query, where jumping would pull the view away mid-edit.
+ */
+function refreshMatches(restart: boolean): void {
   matches = matching(findInput.value);
   if (restart) {
     matchIndex = 0;
   }
   matchIndex = Math.min(matchIndex, Math.max(0, matches.length - 1));
-  const target = matches[matchIndex];
-  if (target) {
-    reveal(target, true);
-  }
   findStatus.textContent = !findInput.value.trim()
     ? ''
     : matches.length === 0

@@ -10,7 +10,7 @@ Editor plugins that draw a Backstage `catalog-info.yaml` as a graph. Two shipped
 
 There is **no shared runtime code**. Each editor implements the ~500-line core — reference
 resolution, the relation table, external placeholders, layered layout — in its own language.
-What is shared is `conformance/`: a normative spec plus 20 cases with golden documents that
+What is shared is `conformance/`: a normative spec plus 21 cases with golden documents that
 **both implementations run in their own CI, in their own language**.
 
 This is load-bearing, not decorative. Changing one `targetKind` in the TypeScript relation table
@@ -62,7 +62,7 @@ The root `Makefile` wraps the commands below for local use (`make` lists targets
 ### JetBrains (`editors/jetbrains`, Kotlin + Gradle, JDK 21)
 
 ```bash
-./gradlew build                      # compile, 82 tests (unit + conformance corpus)
+./gradlew build                      # compile, 83 tests (unit + conformance corpus)
 ./gradlew test --tests 'com.grahambrooks.backstage.catalog.model.EntityRefTest'   # one class
 ./gradlew test --tests '*ConformanceTest*'
 ./gradlew test -Dconformance.update=true          # regenerate the shared goldens
@@ -76,7 +76,7 @@ The root `Makefile` wraps the commands below for local use (`make` lists targets
 ### VS Code (`editors/vscode`, TypeScript + Node)
 
 ```bash
-npm test                             # compile, then 60 tests (unit + conformance corpus)
+npm test                             # compile, then 61 tests (unit + conformance corpus)
 node --test out-test/test/core.test.js                        # one file (after npm run compile)
 node --test --test-name-pattern "casing" out-test/test/conformance.test.js   # one test
 npm run typecheck

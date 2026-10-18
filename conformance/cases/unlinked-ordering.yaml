@@ -1,0 +1,38 @@
+# Barycentre ordering when some nodes have no neighbour in the adjacent layer. Their sort key is
+# their index *before* the sort ("keeps its current index", spec.md) -- not wherever they have
+# got to part-way through it. An implementation that reads the index from the list being sorted
+# orders cd and cb the other way round.
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata: { name: s0 }
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata: { name: s1 }
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata: { name: s2 }
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata: { name: ca }
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata: { name: cb }
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata: { name: cc }
+spec: { system: s1 }
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata: { name: cd }
+spec: { system: s2 }
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata: { name: ce }
+spec: { system: s0 }

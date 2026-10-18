@@ -28,6 +28,11 @@ Versions are CalVer (`YYYY.M.D`) and are kept in step with the JetBrains plugin.
 
 - Clicking a node did nothing, because the pan handler captured the pointer.
 - Finishing a pan no longer clears the selection.
+- Editing the selected entity's relations no longer leaves its highlight or Find's count stale.
+- Caret sync no longer picks the wrong entity while you type.
+- Switching theme recolours the graph.
+- *Show Catalog Graph* from the explorer opens the file you right-clicked.
+- Selecting an entity's YAML reuses the column the file is open in.
 
 ## [2026.9.4]
 

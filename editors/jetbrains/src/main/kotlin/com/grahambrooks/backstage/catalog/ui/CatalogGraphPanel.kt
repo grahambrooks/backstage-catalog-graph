@@ -133,6 +133,9 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         rebuildLayout()
         if (selected != null && selected !in graph.nodes) {
             select(null)
+        } else {
+            // The selection survived the edit, but its neighbours may not have.
+            highlighted = selected?.let { graph.neighbourhoodOf(it) }.orEmpty()
         }
         if (!preserveViewport) {
             fitPending = true
@@ -149,6 +152,8 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
     }
 
     fun isShowingExternal(): Boolean = showExternal
+
+    fun selectedNode(): CatalogNode? = selected?.let { graph.nodes[it] }
 
     /** The graph after the external toggle only -- what the outline lists. */
     fun visibleEntities(): CatalogGraph = visibleGraph()
@@ -739,7 +744,8 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
                 }
             }
             if (facts.isNotEmpty()) {
-                append("<br/><br/>").append(escape(facts.joinToString(" &middot; ")))
+                // Escape each fact, not the joined string, or the separator shows as "&middot;".
+                append("<br/><br/>").append(facts.joinToString(" &middot; ") { escape(it) })
             }
             if (node.external) {
                 append("<br/><br/><i>Referenced but not defined in this file.</i>")

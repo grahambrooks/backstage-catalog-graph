@@ -84,16 +84,14 @@ class LayeredLayout(
                 val fixed = current.getOrNull(fixedIndex) ?: continue
                 val positions = fixed.withIndex().associate { (i, node) -> node.ref to i.toDouble() }
 
-                current[index].sortWith(
-                    compareBy { node ->
-                        val neighbours = adjacency[node.ref].orEmpty().mapNotNull { positions[it] }
-                        if (neighbours.isEmpty()) {
-                            current[index].indexOfFirst { it.ref == node.ref }.toDouble()
-                        } else {
-                            neighbours.average()
-                        }
-                    },
-                )
+                // Keys are fixed before sorting. Reading a node's index from the list while it is
+                // being sorted moves the key under the sort, which orders differently from the
+                // spec (and from the TypeScript core) and can break the comparator's contract.
+                val barycentres = current[index].withIndex().associate { (position, node) ->
+                    val neighbours = adjacency[node.ref].orEmpty().mapNotNull { positions[it] }
+                    node.ref to if (neighbours.isEmpty()) position.toDouble() else neighbours.average()
+                }
+                current[index].sortBy { barycentres.getValue(it.ref) }
             }
             current = current.map { it.toMutableList() }
         }

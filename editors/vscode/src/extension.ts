@@ -9,11 +9,13 @@ import { CatalogGraphPanel } from './graphPanel';
  */
 export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
-    vscode.commands.registerCommand('backstageCatalogGraph.showToSide', () =>
-      showForActiveEditor(context, vscode.ViewColumn.Beside),
+    // From the explorer's context menu the command receives the file that was right-clicked;
+    // from the title bar or the palette it receives nothing and uses the active editor.
+    vscode.commands.registerCommand('backstageCatalogGraph.showToSide', (uri?: vscode.Uri) =>
+      showFor(context, uri, vscode.ViewColumn.Beside),
     ),
-    vscode.commands.registerCommand('backstageCatalogGraph.show', () =>
-      showForActiveEditor(context, vscode.ViewColumn.Active),
+    vscode.commands.registerCommand('backstageCatalogGraph.show', (uri?: vscode.Uri) =>
+      showFor(context, uri, vscode.ViewColumn.Active),
     ),
     vscode.window.onDidChangeActiveTextEditor(updateContextKey),
   );
@@ -25,23 +27,27 @@ export function deactivate(): void {
   // Panels are disposed through the context subscriptions and their own onDidDispose.
 }
 
-function showForActiveEditor(
+async function showFor(
   context: vscode.ExtensionContext,
+  uri: vscode.Uri | undefined,
   column: vscode.ViewColumn,
-): void {
-  const editor = vscode.window.activeTextEditor;
-  if (!editor) {
+): Promise<void> {
+  const document =
+    uri instanceof vscode.Uri
+      ? await vscode.workspace.openTextDocument(uri)
+      : vscode.window.activeTextEditor?.document;
+  if (!document) {
     void vscode.window.showInformationMessage('Open a catalog-info.yaml first.');
     return;
   }
-  if (!isCatalogDocument(editor.document)) {
+  if (!isCatalogDocument(document)) {
     void vscode.window.showInformationMessage(
-      `${fileNameOf(editor.document.uri)} is not a Backstage catalog descriptor. ` +
+      `${fileNameOf(document.uri)} is not a Backstage catalog descriptor. ` +
         'Expected catalog-info.yaml, *.catalog-info.yaml, catalog-all.yaml or catalog-entities.yaml.',
     );
     return;
   }
-  CatalogGraphPanel.show(context, editor.document, column);
+  CatalogGraphPanel.show(context, document, column);
 }
 
 function updateContextKey(editor: vscode.TextEditor | undefined): void {

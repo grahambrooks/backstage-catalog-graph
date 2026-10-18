@@ -24,6 +24,16 @@ export class CatalogGraphPanel {
   private rebuildTimer: ReturnType<typeof setTimeout> | undefined;
   private disposed = false;
 
+  /** The document version the webview's graph was built from; its offsets mean nothing for any other. */
+  private builtVersion = -1;
+
+  /**
+   * A caret move made while the graph was behind the document, waiting for the rebuild. Its
+   * offset comes from text the graph has not seen, so following it now could pick the wrong
+   * entity -- and that choice would stick.
+   */
+  private deferredCaret: number | undefined;
+
   static show(
     context: vscode.ExtensionContext,
     document: vscode.TextDocument,
@@ -72,10 +82,12 @@ export class CatalogGraphPanel {
         if (event.textEditor.document.uri.toString() !== this.document.uri.toString()) {
           return;
         }
-        void this.panel.webview.postMessage({
-          command: 'caret',
-          offset: this.document.offsetAt(event.selections[0].active),
-        });
+        const offset = this.document.offsetAt(event.selections[0].active);
+        if (this.document.version !== this.builtVersion) {
+          this.deferredCaret = offset;
+          return;
+        }
+        void this.panel.webview.postMessage({ command: 'caret', offset });
       }),
 
       vscode.workspace.onDidCloseTextDocument((closed) => {
@@ -99,10 +111,10 @@ export class CatalogGraphPanel {
     if (!isRecord(message)) {
       return;
     }
-    if (message.command === 'navigate' && typeof message.offset === 'number') {
+    if (message.command === 'navigate' && Number.isInteger(message.offset)) {
       void this.revealAt(
-        message.offset,
-        typeof message.end === 'number' ? message.end : undefined,
+        message.offset as number,
+        Number.isInteger(message.end) ? (message.end as number) : undefined,
         message.focus === true,
       );
     }
@@ -112,7 +124,8 @@ export class CatalogGraphPanel {
   }
 
   /**
-   * Selects the YAML that defines the entity, in the editor column the graph came from. The
+   * Selects the YAML that defines the entity, in the column the document is already open in
+   * (the first column if it is not visible), rather than opening a second tab of it. The
    * caret goes at the top of the selection, so it still sits inside that entity and the graph
    * keeps it selected. Without an end, only the caret moves. Unless `focus`, keyboard focus stays
    * in the graph, so a single click can select without taking the user out of it.
@@ -123,7 +136,10 @@ export class CatalogGraphPanel {
     const position = this.document.positionAt(clamp(offset));
     const last = this.document.positionAt(clamp(end ?? offset));
     const editor = await vscode.window.showTextDocument(this.document, {
-      viewColumn: vscode.ViewColumn.One,
+      viewColumn:
+        vscode.window.visibleTextEditors.find(
+          (editor) => editor.document.uri.toString() === this.document.uri.toString(),
+        )?.viewColumn ?? vscode.ViewColumn.One,
       preserveFocus: !focus,
     });
     // Anchor at the end and the active end at the start: the caret is the active end.
@@ -146,12 +162,18 @@ export class CatalogGraphPanel {
       return;
     }
     const graph = buildCatalogGraph(readDocuments(this.document.getText()));
+    this.builtVersion = this.document.version;
     void this.panel.webview.postMessage({
       command: 'render',
       graph: toWire(graph),
       showExternal: this.showExternal(),
       ownersAsBadges: this.ownersAsBadges(),
     });
+    // postMessage keeps order, so the caret lands on the graph just sent.
+    if (this.deferredCaret !== undefined) {
+      void this.panel.webview.postMessage({ command: 'caret', offset: this.deferredCaret });
+      this.deferredCaret = undefined;
+    }
   }
 
   private showExternal(): boolean {

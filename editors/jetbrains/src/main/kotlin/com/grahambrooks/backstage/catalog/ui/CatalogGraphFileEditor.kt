@@ -49,6 +49,16 @@ class CatalogGraphFileEditor(
     /** The entity under the caret when it last moved, so only a move into another entity reacts. */
     private var caretEntity: EntityRef? = null
 
+    /** The document stamp [graph] was built from; its offsets mean nothing for any other. */
+    private var builtStamp: Long = -1
+
+    /**
+     * A caret move made while [graph] was behind the document, waiting for the rebuild. Its
+     * offsets come from text the graph has not seen, so following it now could pick the wrong
+     * entity -- and that choice would stick.
+     */
+    private var deferredCaret: Int? = null
+
     init {
         view.onNavigate = ::navigateTo
         view.onProblemChosen = { offset -> OpenFileDescriptor(project, file, offset).navigate(true) }
@@ -66,11 +76,13 @@ class CatalogGraphFileEditor(
         EditorFactory.getInstance().eventMulticaster.addCaretListener(
             object : CaretListener {
                 override fun caretPositionChanged(event: CaretEvent) {
-                    if (event.editor.document != document()) return
-                    val ref = graph.entityAt(event.editor.caretModel.offset)?.ref
-                    if (ref == caretEntity) return
-                    caretEntity = ref
-                    if (ref != null) view.reveal(ref)
+                    val document = event.editor.document
+                    if (document != document()) return
+                    if (document.modificationStamp != builtStamp) {
+                        deferredCaret = event.editor.caretModel.offset
+                        return
+                    }
+                    followCaret(event.editor.caretModel.offset)
                 }
             },
             this,
@@ -127,8 +139,20 @@ class CatalogGraphFileEditor(
             val graph = ReadAction.compute<CatalogGraph, RuntimeException> { readGraph() }
             built = true
             this.graph = graph
+            builtStamp = document()?.modificationStamp ?: -1
             view.show(graph, preserveViewport)
+            deferredCaret?.let { offset ->
+                deferredCaret = null
+                followCaret(offset)
+            }
         }
+    }
+
+    private fun followCaret(offset: Int) {
+        val ref = graph.entityAt(offset)?.ref
+        if (ref == caretEntity) return
+        caretEntity = ref
+        if (ref != null) view.reveal(ref)
     }
 
     /** Reads the committed PSI. Must run under a read action. */

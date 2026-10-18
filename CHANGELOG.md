@@ -52,6 +52,16 @@ in step between editors. The VS Code extension also carries
   than the pane.
 - In VS Code, clicking a node did nothing: the pan handler captured the pointer, so the click
   went to the canvas and cleared the selection.
+- The JetBrains layout read a node's position from the layer while sorting it, so layers with
+  unlinked nodes could be ordered differently from the spec and from VS Code. New conformance
+  case `case-unlinked-ordering` pins it for both.
+- Editing the selected entity's relations left its neighbourhood highlight stale, and Find's
+  "n of m" stale, until something was reselected.
+- Caret sync could select the wrong entity while typing, because it used the previous graph's
+  offsets; a caret move is now held until the graph catches up.
+- The JetBrains legend took no width and never showed; tooltips showed a literal `&middot;`.
+- VS Code: a theme switch now recolours the graph; the explorer's *Show Catalog Graph* opens the
+  file that was right-clicked; selecting YAML reuses the column it is open in.
 
 ## [2026.9.4]
 

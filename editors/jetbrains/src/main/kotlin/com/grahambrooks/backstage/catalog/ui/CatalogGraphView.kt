@@ -195,10 +195,18 @@ class CatalogGraphView(
     }
 
     private fun runFind(restart: Boolean) {
+        refreshMatches(restart)
+        matches.getOrNull(matchIndex)?.let { canvas.reveal(it, zoomToRead = true) }
+    }
+
+    /**
+     * Recomputes the matches and the "2 of 5" status without moving to one -- for when the graph
+     * changes under an unchanged query, where jumping would pull the view away mid-edit.
+     */
+    private fun refreshMatches(restart: Boolean) {
         matches = canvas.matching(findField.text)
         if (restart) matchIndex = 0
         matchIndex = matchIndex.coerceIn(0, (matches.size - 1).coerceAtLeast(0))
-        matches.getOrNull(matchIndex)?.let { canvas.reveal(it, zoomToRead = true) }
         findStatus.text = when {
             findField.text.isBlank() -> ""
             matches.isEmpty() -> "No matches"
@@ -216,8 +224,9 @@ class CatalogGraphView(
         canvas.setGraph(graph, preserveViewport)
         if (showingOutline) outline.show(canvas.visibleEntities())
         updateProblems(graph)
-        updateStatus(graph, selected = null)
+        updateStatus(graph, canvas.selectedNode())
         canvas.onSelectionChanged = { node -> updateStatus(graph, node) }
+        refreshMatches(restart = false)
     }
 
     /** The legend describes what is drawn, so it follows the toolbar toggles as well as the file. */
@@ -285,7 +294,10 @@ class CatalogGraphView(
         add(object : ToggleAction("Group by System", GROUP_TOGGLE_HINT, AllIcons.Actions.GroupBy) {
             override fun getActionUpdateThread() = ActionUpdateThread.EDT
             override fun isSelected(event: AnActionEvent) = canvas.isGroupingBySystem()
-            override fun setSelected(event: AnActionEvent, state: Boolean) = canvas.setGroupBySystem(state)
+            override fun setSelected(event: AnActionEvent, state: Boolean) {
+                canvas.setGroupBySystem(state)
+                refreshMatches(restart = false)
+            }
         })
         add(object : ToggleAction("Focus on Selection", FOCUS_TOGGLE_HINT, AllIcons.General.Locate) {
             override fun getActionUpdateThread() = ActionUpdateThread.EDT
@@ -317,7 +329,21 @@ class CatalogGraphView(
 
         init {
             border = BorderFactory.createEmptyBorder()
-            preferredSize = Dimension(0, 26)
+        }
+
+        private fun legendFont(): Font = UIUtil.getLabelFont().deriveFont(Font.PLAIN, JBUI.scaleFontSize(10f).toFloat())
+
+        /**
+         * As wide as what [paintComponent] draws. The footer gives the legend its preferred width
+         * and no more, so a fixed width here -- it used to be zero -- hides the legend entirely.
+         */
+        override fun getPreferredSize(): Dimension {
+            val metrics = getFontMetrics(legendFont())
+            var width = 8
+            kinds.forEach { width += 12 + metrics.stringWidth(it.displayName) + 14 }
+            if (relations.isNotEmpty()) width += 14
+            relations.forEach { width += 16 + metrics.stringWidth(it.displayName) + 14 }
+            return Dimension(width, JBUI.scale(26))
         }
 
         override fun paintComponent(g: Graphics) {
@@ -325,7 +351,7 @@ class CatalogGraphView(
             val g2 = g.create() as Graphics2D
             try {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                g2.font = UIUtil.getLabelFont().deriveFont(Font.PLAIN, JBUI.scaleFontSize(10f).toFloat())
+                g2.font = legendFont()
                 var x = 8
                 val metrics = g2.fontMetrics
                 val baseline = height / 2 + metrics.ascent / 2 - 1
