@@ -1,0 +1,30 @@
+editors/vscode/src/webview/main.ts
+  s_ccff39c7afa1ba::t_273bf8991a607b 441-443,446,452,850-851,864-868,870-874,884-886
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphFileEditor.kt
+  s_ccff39c7afa1ba::t_12a048bf7da31d 149-150
+  s_ccff39c7afa1ba::t_fd8e1db5b99093 152,156
+editors/vscode/README.md
+  s_ccff39c7afa1ba::t_d3914e11fb6690 25-26
+editors/vscode/src/graphPanel.ts
+  s_ccff39c7afa1ba::t_273bf8991a607b 103-107,117-118,120,127
+editors/jetbrains/TESTING.md
+  s_ccff39c7afa1ba::t_d3914e11fb6690 51-52
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphPanel.kt
+  s_ccff39c7afa1ba::t_3f471836d4dee8 52-56,552-558,560
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "78793f0eb247374b9bc15f22a98cedfd43aa6013",
+  "prompts": {},
+  "sessions": {
+    "s_ccff39c7afa1ba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "077998fa-6922-450c-91cb-7db0d67c3e3c",
+        "model": "unknown"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
