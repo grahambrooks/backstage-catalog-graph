@@ -18,6 +18,8 @@ import java.awt.Font
 import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.RenderingHints
+import java.awt.event.ComponentAdapter
+import java.awt.event.ComponentEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseWheelEvent
@@ -63,15 +65,28 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
 
     private var showExternal: Boolean = true
 
+    /** Set when a fit was asked for before the panel had a size to fit into. */
+    private var fitPending: Boolean = false
+
     private var dragAnchor: Point2D? = null
     private var dragOrigin: Pair<Double, Double>? = null
 
     init {
         isOpaque = true
         background = CatalogPalette.background
+        // The canvas pans and zooms itself, so it must never ask its container for the room the
+        // graph needs: a preferred size that tracks the layout makes the split editor grow past
+        // the window instead of clipping.
         preferredSize = Dimension(720, 520)
+        minimumSize = Dimension(0, 0)
         toolTipText = ""
         installMouseHandlers()
+        addComponentListener(object : ComponentAdapter() {
+            override fun componentResized(event: ComponentEvent) {
+                if (fitPending) fitToWindow() else clampOrigin()
+                repaint()
+            }
+        })
     }
 
     // --- Public API -----------------------------------------------------------------------
@@ -82,8 +97,10 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         if (selected != null && selected !in graph.nodes) {
             select(null)
         }
-        if (!preserveViewport) fitToWindow()
-        revalidate()
+        if (!preserveViewport) {
+            fitPending = true
+            fitToWindow()
+        }
         repaint()
     }
 
@@ -108,7 +125,10 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
 
     /** Scales and centres so the whole graph is visible, with a little breathing room. */
     fun fitToWindow() {
+        // The first fit usually arrives before the tab has been laid out; the resize that
+        // follows completes it.
         if (layout.width <= 0 || layout.height <= 0 || width <= 0 || height <= 0) return
+        fitPending = false
         val fit = min(width / layout.width, height / layout.height)
         scale = fit.coerceIn(MIN_SCALE, 1.0)
         centreContent()
@@ -144,10 +164,14 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         originY = (height - layout.height * scale) / 2
     }
 
-    override fun getPreferredSize(): Dimension = Dimension(
-        max(320, (layout.width * scale).toInt()),
-        max(240, (layout.height * scale).toInt()),
-    )
+    /** Keeps at least a sliver of the graph on screen, so panning can never lose it entirely. */
+    private fun clampOrigin() {
+        if (layout.nodes.isEmpty()) return
+        val keepX = min(KEEP_VISIBLE, width / 2.0)
+        val keepY = min(KEEP_VISIBLE, height / 2.0)
+        originX = originX.coerceIn(keepX - layout.width * scale, width - keepX)
+        originY = originY.coerceIn(keepY - layout.height * scale, height - keepY)
+    }
 
     // --- Painting -------------------------------------------------------------------------
 
@@ -217,9 +241,12 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         g2.color = CatalogPalette.accentFor(node.kind)
         val accent = Path2D.Double()
         accent.append(RoundRectangle2D.Double(bounds.x, bounds.y, ACCENT_WIDTH * 2, bounds.height, ARC, ARC), false)
+        // Restore the previous clip, never null it: a null clip lifts Swing's clip to this
+        // component's bounds, and everything painted afterwards spills across the whole window.
+        val clip = g2.clip
         g2.clip(shape)
         g2.fill(accent)
-        g2.clip = null
+        g2.clip = clip
 
         val isSelected = node.ref == selected
         val isHovered = node.ref == hovered
@@ -377,6 +404,7 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
                 cursor = Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR)
                 originX = origin.first + (event.x - anchor.x)
                 originY = origin.second + (event.y - anchor.y)
+                clampOrigin()
                 repaint()
             }
 
@@ -415,6 +443,7 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
                     // Plain wheel scrolls the canvas vertically; Shift scrolls it sideways.
                     val delta = event.preciseWheelRotation * WHEEL_PAN_STEP
                     if (event.isShiftDown) originX -= delta else originY -= delta
+                    clampOrigin()
                     repaint()
                     return
                 }
@@ -443,7 +472,7 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         scale = next
         originX = anchor.x - graphPoint.x * scale
         originY = anchor.y - graphPoint.y * scale
-        revalidate()
+        clampOrigin()
         repaint()
     }
 
@@ -526,9 +555,11 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         const val ARROW_LENGTH = 9.0
         const val ARROW_SPREAD = 0.42
         const val ZOOM_STEP = 1.12
-        const val MIN_SCALE = 0.25
+        // Low enough that Fit to Window can show a catalog of a few dozen entities whole.
+        const val MIN_SCALE = 0.1
         const val MAX_SCALE = 3.0
         const val WHEEL_PAN_STEP = 48.0
+        const val KEEP_VISIBLE = 48.0
         const val LABEL_SCALE_THRESHOLD = 0.72
         const val DIM_ALPHA = 0.22f
         val EXTERNAL_DASH = floatArrayOf(5f, 4f)
