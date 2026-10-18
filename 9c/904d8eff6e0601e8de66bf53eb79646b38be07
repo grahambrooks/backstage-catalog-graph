@@ -1,0 +1,35 @@
+editors/vscode/src/webview/main.ts
+  s_ccff39c7afa1ba::t_2837d7c6cee166 366-382,385-386,388-392,395-400,402,409,411-428,486-498,500-501,1050-1052,1252,1258-1266,1268
+  s_ccff39c7afa1ba::t_24f26f8b6b0ae6 4,98,165,208-209,338,1132
+CHANGELOG.md
+  s_ccff39c7afa1ba::t_d724615f6ff90c 42-46
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphPanel.kt
+  s_ccff39c7afa1ba::t_5edc10ec742be6 103-108,387,444,453,472,494,592,841-845
+  s_ccff39c7afa1ba::t_bec9865bafeb51 183,274-278,282-283,285-290,293-296,306-314,320-330,731-732,804,809-815,823-840,846
+  s_ccff39c7afa1ba::t_48e28b50c06e73 331
+CLAUDE.md
+  s_ccff39c7afa1ba::t_f58430779b7185 102-104
+editors/vscode/CHANGELOG.md
+  s_ccff39c7afa1ba::t_d724615f6ff90c 23-24
+Makefile
+  s_ccff39c7afa1ba::t_6275661720c672 71-72,74
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphFileEditor.kt
+  s_ccff39c7afa1ba::t_71dba242d4ef91 9,28,118-120,140-145,150-152,154-156,158-167
+  s_ccff39c7afa1ba::t_ed94bc287f1b79 53-59,149,157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9c904d8eff6e0601e8de66bf53eb79646b38be07",
+  "prompts": {},
+  "sessions": {
+    "s_ccff39c7afa1ba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "077998fa-6922-450c-91cb-7db0d67c3e3c",
+        "model": "unknown"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
