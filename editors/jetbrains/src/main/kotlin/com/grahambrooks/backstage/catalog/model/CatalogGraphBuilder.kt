@@ -12,27 +12,44 @@ package com.grahambrooks.backstage.catalog.model
  */
 object CatalogGraphBuilder {
 
-    /** Maps a `spec` field onto the relation it expresses and the kind its references default to. */
+    /**
+     * Maps a `spec` field onto the relation it expresses and the kind its references default to.
+     * A null [targetKind] means the reference must name its own kind, as Backstage requires for
+     * `dependsOn`. A rule with [kinds] applies only to entities of those kinds.
+     */
     private data class SpecRule(
         val field: String,
         val relation: RelationType,
-        val targetKind: String,
+        val targetKind: String?,
+        val kinds: Set<String>? = null,
     )
 
+    /**
+     * The relation table from `conformance/spec.md`, in the order it is documented. Where a
+     * field means something different for one kind, that kind's rule comes first and wins.
+     */
     private val SPEC_RULES = listOf(
         SpecRule("owner", RelationType.OWNED_BY, "group"),
         SpecRule("system", RelationType.PART_OF, "system"),
         SpecRule("domain", RelationType.PART_OF, "domain"),
         SpecRule("subcomponentOf", RelationType.PART_OF, "component"),
+        SpecRule("subdomainOf", RelationType.PART_OF, "domain"),
         SpecRule("parent", RelationType.CHILD_OF, "group"),
         SpecRule("children", RelationType.PARENT_OF, "group"),
         SpecRule("members", RelationType.HAS_MEMBER, "user"),
         SpecRule("memberOf", RelationType.MEMBER_OF, "group"),
         SpecRule("providesApis", RelationType.PROVIDES_API, "api"),
         SpecRule("consumesApis", RelationType.CONSUMES_API, "api"),
-        SpecRule("dependsOn", RelationType.DEPENDS_ON, "component"),
-        SpecRule("dependencyOf", RelationType.DEPENDENCY_OF, "component"),
+        SpecRule("dependsOn", RelationType.DEPENDS_ON, "airesource", kinds = setOf("airesource")),
+        SpecRule("dependsOn", RelationType.DEPENDS_ON, null),
+        SpecRule("dependencyOf", RelationType.DEPENDENCY_OF, null),
+        SpecRule("skills", RelationType.HAS_PART, "airesource", kinds = setOf("airesource")),
+        SpecRule("plugins", RelationType.HAS_PART, "airesource", kinds = setOf("airesource")),
     )
+
+    /** The rules that apply to an entity of [kind]: for each field, the first that matches. */
+    private fun rulesFor(kind: String): List<SpecRule> =
+        SPEC_RULES.filter { it.kinds == null || kind in it.kinds }.distinctBy { it.field }
 
     fun build(documents: List<RawDocument>): CatalogGraph {
         val problems = mutableListOf<CatalogProblem>()
@@ -57,9 +74,17 @@ object CatalogGraphBuilder {
         // Pass 2 -- relations, creating a placeholder for every target this file does not declare.
         for ((document, ref) in pending) {
             val spec = document.data.mapAt("spec") ?: continue
-            for (rule in SPEC_RULES) {
+            for (rule in rulesFor(ref.kind)) {
                 for (raw in spec.stringsAt(rule.field)) {
-                    val target = EntityRef.parse(raw, rule.targetKind, ref.namespace)
+                    if (rule.targetKind == null && ':' !in raw && raw.isNotBlank()) {
+                        problems += CatalogProblem(
+                            "${ref.shortLabel()}: \"$raw\" in spec.${rule.field} must name its kind, " +
+                                "as in component:$raw or resource:$raw",
+                            document.offset,
+                        )
+                        continue
+                    }
+                    val target = EntityRef.parse(raw, rule.targetKind.orEmpty(), ref.namespace)
                     if (target == null) {
                         problems += CatalogProblem(
                             "${ref.shortLabel()}: cannot read \"$raw\" in spec.${rule.field} as an entity reference",

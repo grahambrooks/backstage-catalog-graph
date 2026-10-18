@@ -1,4 +1,5 @@
-# Every spelling of an entity reference, all resolving against the rules in spec.md.
+# Every spelling of an entity reference, all resolving against the rules in spec.md. The
+# namespace-only form sits on subcomponentOf because dependsOn has no default kind.
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
@@ -7,9 +8,9 @@ metadata:
 spec:
   owner: platform                      # bare -> the field's default kind, entity's namespace
   system: system:storefront            # kind given, namespace defaulted
+  subcomponentOf: shipping/queue       # namespace given, kind defaulted
   dependsOn:
     - resource:default/db              # fully qualified
-    - shipping/queue                   # namespace given, kind defaulted
     - component:retail/labels          # fully qualified, entity's own namespace
   consumesApis:
     - api:default/pricing

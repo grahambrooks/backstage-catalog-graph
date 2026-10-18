@@ -14,6 +14,7 @@ const LIGHT: Record<string, string> = {
   Group: '#ad1457',
   User: '#2e7d32',
   Template: '#00838f',
+  AiResource: '#9e7c00',
   Location: '#546e7a',
   Entity: '#616161',
 };
@@ -27,6 +28,7 @@ const DARK: Record<string, string> = {
   Group: '#f06292',
   User: '#81c784',
   Template: '#4dd0e1',
+  AiResource: '#ffd54f',
   Location: '#90a4ae',
   Entity: '#9e9e9e',
 };
@@ -40,6 +42,7 @@ const DARK: Record<string, string> = {
 const RELATION_FAMILY: Record<string, string> = {
   ownedBy: 'ownership',
   partOf: 'structure',
+  hasPart: 'structure',
   parentOf: 'hierarchy',
   childOf: 'hierarchy',
   memberOf: 'membership',

@@ -11,9 +11,9 @@
   "edges": [
     {"from": "component:retail/refs", "to": "api:default/pricing", "type": "consumesApi"},
     {"from": "component:retail/refs", "to": "component:retail/labels", "type": "dependsOn"},
-    {"from": "component:retail/refs", "to": "component:shipping/queue", "type": "dependsOn"},
     {"from": "component:retail/refs", "to": "resource:default/db", "type": "dependsOn"},
     {"from": "component:retail/refs", "to": "group:retail/platform", "type": "ownedBy"},
+    {"from": "component:retail/refs", "to": "component:shipping/queue", "type": "partOf"},
     {"from": "component:retail/refs", "to": "system:retail/storefront", "type": "partOf"}
   ],
   "problems": [

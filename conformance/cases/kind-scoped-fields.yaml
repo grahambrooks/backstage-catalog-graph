@@ -1,0 +1,40 @@
+# Fields whose meaning depends on the entity's kind, as in Backstage's catalog model.
+#
+#   - `dependsOn` / `dependencyOf` on a Component or Resource have no default kind: a bare name
+#     is a problem and draws no edge. On an AiResource, `dependsOn` defaults to AiResource.
+#   - `skills` and `plugins` mean hasPart only on an AiResource; elsewhere they are ignored.
+#   - `subdomainOf` nests one Domain in another.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: web
+spec:
+  owner: group:team
+  dependsOn:
+    - db
+    - resource:db
+  dependencyOf:
+    - portal
+  plugins:
+    - not-a-reference-here
+  skills:
+    - nor-here
+---
+apiVersion: backstage.io/v1alpha1
+kind: AiResource
+metadata:
+  name: helper
+spec:
+  type: skill
+  lifecycle: experimental
+  owner: group:team
+  dependsOn:
+    - basics
+---
+apiVersion: backstage.io/v1alpha1
+kind: Domain
+metadata:
+  name: payments
+spec:
+  owner: group:team
+  subdomainOf: commerce

@@ -1,10 +1,13 @@
-# Exercises all twelve `spec` fields the plugin reads, so every edge label appears at least
+# Exercises all fourteen `spec` fields the plugin reads, so every edge label appears at least
 # once. Zoom past 75% to see the labels.
 #
 #   owner -> ownedBy          system -> partOf            domain -> partOf
-#   subcomponentOf -> partOf  parent -> childOf           children -> parentOf
-#   members -> hasMember      memberOf -> memberOf        providesApis -> providesApi
-#   consumesApis -> consumesApi  dependsOn -> dependsOn   dependencyOf -> dependencyOf
+#   subcomponentOf -> partOf  subdomainOf -> partOf       parent -> childOf
+#   children -> parentOf      members -> hasMember        memberOf -> memberOf
+#   providesApis -> providesApi  consumesApis -> consumesApi  dependsOn -> dependsOn
+#   dependencyOf -> dependencyOf  skills -> hasPart (AiResource, alpha)
+#
+# `plugins` (an AiResource marketplace) also writes hasPart; 11-ai-resources shows it.
 apiVersion: backstage.io/v1alpha1
 kind: Domain
 metadata:
@@ -12,6 +15,16 @@ metadata:
   title: Commerce
 spec:
   owner: group:commerce-leadership
+---
+apiVersion: backstage.io/v1alpha1
+kind: Domain
+metadata:
+  name: retail
+  title: Retail
+  description: A subdomain, so it sits under commerce
+spec:
+  owner: group:commerce-leadership
+  subdomainOf: commerce
 ---
 apiVersion: backstage.io/v1alpha1
 kind: System
@@ -95,3 +108,17 @@ metadata:
 spec:
   memberOf:
     - group:orders-team
+---
+apiVersion: backstage.io/v1alpha1
+kind: AiResource
+metadata:
+  name: orders-toolkit
+  title: Orders Toolkit
+  description: An AI coding plugin (alpha kind); its skills are its parts
+spec:
+  type: plugin
+  lifecycle: experimental
+  owner: group:orders-team
+  system: orders
+  skills:
+    - orders-runbook

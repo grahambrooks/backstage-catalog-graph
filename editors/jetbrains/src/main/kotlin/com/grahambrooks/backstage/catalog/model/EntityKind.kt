@@ -19,6 +19,13 @@ enum class EntityKind(
     GROUP("Group", 4),
     USER("User", 5),
     TEMPLATE("Template", 2),
+
+    /**
+     * Alpha (Backstage 1.51+, `catalog-backend-module-ai-model`): skills, rules, plugins and
+     * marketplaces for AI coding tools. Part of a System like an API or Resource, so it shares
+     * their layer.
+     */
+    AI_RESOURCE("AiResource", 3),
     LOCATION("Location", 6),
     OTHER("Entity", 6),
     ;

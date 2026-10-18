@@ -34,7 +34,7 @@ class ExamplesTest {
         Expectation("01-minimal/catalog-info.yaml", declared = 1, external = 2, edges = 2, problems = 0),
         Expectation("02-storefront-system/catalog-info.yaml", declared = 7, external = 5, edges = 18, problems = 0),
         Expectation("03-external-references/catalog-info.yaml", declared = 1, external = 9, edges = 9, problems = 0),
-        Expectation("04-all-relations/catalog-info.yaml", declared = 8, external = 4, edges = 19, problems = 0),
+        Expectation("04-all-relations/catalog-info.yaml", declared = 10, external = 5, edges = 24, problems = 0),
         Expectation("05-namespaces/catalog-info.yaml", declared = 3, external = 2, edges = 5, problems = 0),
         Expectation("06-org-chart/catalog-info.yaml", declared = 6, external = 1, edges = 10, problems = 0),
         Expectation("07-malformed/catalog-info.yaml", declared = 2, external = 2, edges = 2, problems = 4),
@@ -42,6 +42,7 @@ class ExamplesTest {
         Expectation("09-no-entities/catalog-info.yaml", declared = 0, external = 0, edges = 0, problems = 0),
         Expectation("10-file-naming/catalog-all.yaml", declared = 1, external = 1, edges = 1, problems = 0),
         Expectation("10-file-naming/payments.catalog-info.yaml", declared = 1, external = 1, edges = 1, problems = 0),
+        Expectation("11-ai-resources/catalog-info.yaml", declared = 7, external = 3, edges = 18, problems = 0),
     )
 
     @Test
@@ -80,6 +81,29 @@ class ExamplesTest {
     fun `04-all-relations exercises every relation the plugin reads`() {
         val exercised = graphOf("04-all-relations/catalog-info.yaml").edges.map { it.type }.toSet()
         assertEquals(RelationType.entries.toSet(), exercised)
+    }
+
+    @Test
+    fun `11-ai-resources reads the alpha AiResource fields by kind`() {
+        val graph = graphOf("11-ai-resources/catalog-info.yaml")
+        fun ai(name: String) = EntityRef("airesource", "default", name)
+        val hasPart = graph.edges.filter { it.type == RelationType.HAS_PART }.map { it.from to it.to }.toSet()
+        assertEquals(
+            setOf(
+                ai("frontend-pack") to ai("frontend-design"),
+                ai("frontend-pack") to ai("base-coding-standards"),
+                ai("internal-marketplace") to ai("frontend-pack"),
+                ai("internal-marketplace") to ai("security-pack"),
+            ),
+            hasPart,
+        )
+        // A skill's bare dependsOn means another AiResource, not a Component.
+        assertTrue(
+            graph.edges.any {
+                it.type == RelationType.DEPENDS_ON && it.from == ai("frontend-design") && it.to == ai("base-coding-standards")
+            },
+        )
+        assertTrue(graph.nodes.values.filter { it.ref.kind == "airesource" }.all { it.kind.displayName == "AiResource" })
     }
 
     @Test

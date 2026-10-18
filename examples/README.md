@@ -24,13 +24,14 @@ is written here, the plugin is wrong, not the example.
 | [`01-minimal`](01-minimal/catalog-info.yaml) | 1 | 2 | 2 | 0 | The everyday case: one component, owner and system defined elsewhere |
 | [`02-storefront-system`](02-storefront-system/catalog-info.yaml) | 7 | 5 | 18 | 0 | A complete system — domain, system, components, API, resource, group |
 | [`03-external-references`](03-external-references/catalog-info.yaml) | 1 | 9 | 9 | 0 | Placeholder rendering on its own, and the external toggle |
-| [`04-all-relations`](04-all-relations/catalog-info.yaml) | 8 | 4 | 19 | 0 | Every one of the ten relation types, so every edge label appears |
+| [`04-all-relations`](04-all-relations/catalog-info.yaml) | 10 | 5 | 24 | 0 | Every one of the eleven relation types, so every edge label appears |
 | [`05-namespaces`](05-namespaces/catalog-info.yaml) | 3 | 2 | 5 | 0 | Namespace handling and reference equality |
 | [`06-org-chart`](06-org-chart/catalog-info.yaml) | 6 | 1 | 10 | 0 | Groups and Users only — layout with no Component or System |
 | [`07-malformed`](07-malformed/catalog-info.yaml) | 2 | 2 | 2 | 4 | Problem reporting, and that a bad document doesn't blank the graph |
 | [`08-large-catalog`](08-large-catalog/catalog-info.yaml) | 37 | 1 | 93 | 0 | Viewport controls and neighbourhood highlighting at scale |
 | [`09-no-entities`](09-no-entities/catalog-info.yaml) | 0 | 0 | 0 | 0 | The empty state — a comment-only file is not a broken file |
 | [`10-file-naming`](10-file-naming) | — | — | — | — | Which filenames get a catalog tab, and which don't |
+| [`11-ai-resources`](11-ai-resources/catalog-info.yaml) | 7 | 3 | 18 | 0 | The alpha `AiResource` kind — skills, a rule, a plugin, a marketplace — and an MCP server API |
 
 "External" counts the dashed placeholder nodes: entities the file references but does not
 declare. "Relations" counts edges, including those to placeholders.
@@ -50,8 +51,9 @@ should vanish but a single isolated node; turn it back on and the nine placehold
 
 **04-all-relations** — zoom past about 75% and every edge should carry its relation name:
 `ownedBy`, `partOf`, `parentOf`, `childOf`, `memberOf`, `hasMember`, `providesApi`,
-`consumesApi`, `dependsOn`, `dependencyOf`. Below that threshold labels are suppressed, which is
-deliberate.
+`consumesApi`, `dependsOn`, `dependencyOf`, `hasPart`. Below that threshold labels are suppressed,
+which is deliberate. `Retail` sits beside `Commerce` with a `partOf` edge into it (`subdomainOf`).
+Turn **Owners as badges** off to see the `ownedBy` edges.
 
 **05-namespaces** — `Checkout (retail)` and `Checkout (wholesale)` must be two nodes, not one.
 Both should have a `consumesApi` edge into the *same* `Checkout API (retail)` node, even though
@@ -75,6 +77,12 @@ pans. Click a node: everything outside its neighbourhood should dim.
 **10-file-naming** — `payments.catalog-info.yaml` and `catalog-all.yaml` should each open with
 the split view. `app-config.yaml` is the control: it should open in the ordinary YAML editor
 with **no** catalog tab.
+
+**11-ai-resources** — the alpha `AiResource` kind, in gold, in the same layer as the MCP server
+API. The marketplace, plugin and skills form a hierarchy, so they draw as rows: *Internal
+Marketplace* above *Frontend Pack* above its two skills, joined by `hasPart`. *Frontend Design*'s
+bare `dependsOn: base-coding-standards` lands on the skill, not on a Component. `security-pack`
+is a dashed placeholder. **Group by System** puts all of it in one *AI Tooling* box.
 
 ## Adding an example
 

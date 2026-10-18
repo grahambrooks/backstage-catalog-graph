@@ -23,6 +23,7 @@ object CatalogPalette {
         EntityKind.GROUP to JBColor(Color(0xAD1457), Color(0xF06292)),
         EntityKind.USER to JBColor(Color(0x2E7D32), Color(0x81C784)),
         EntityKind.TEMPLATE to JBColor(Color(0x00838F), Color(0x4DD0E1)),
+        EntityKind.AI_RESOURCE to JBColor(Color(0x9E7C00), Color(0xFFD54F)),
         EntityKind.LOCATION to JBColor(Color(0x546E7A), Color(0x90A4AE)),
         EntityKind.OTHER to JBColor(Color(0x616161), Color(0x9E9E9E)),
     )
@@ -43,6 +44,7 @@ object CatalogPalette {
         mapOf(
             RelationType.OWNED_BY to ownership,
             RelationType.PART_OF to structure,
+            RelationType.HAS_PART to structure,
             RelationType.PARENT_OF to hierarchy,
             RelationType.CHILD_OF to hierarchy,
             RelationType.MEMBER_OF to membership,

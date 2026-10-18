@@ -1,0 +1,29 @@
+{
+  "nodes": [
+    {"ref": "airesource:default/basics", "kind": "AiResource", "title": "basics", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "airesource:default/helper", "kind": "AiResource", "title": "helper", "type": "skill", "lifecycle": "experimental", "tags": [], "external": false},
+    {"ref": "component:default/web", "kind": "Component", "title": "web", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "domain:default/commerce", "kind": "Domain", "title": "commerce", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "domain:default/payments", "kind": "Domain", "title": "payments", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "group:default/team", "kind": "Group", "title": "team", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "resource:default/db", "kind": "Resource", "title": "db", "type": null, "lifecycle": null, "tags": [], "external": true}
+  ],
+  "edges": [
+    {"from": "airesource:default/helper", "to": "airesource:default/basics", "type": "dependsOn"},
+    {"from": "airesource:default/helper", "to": "group:default/team", "type": "ownedBy"},
+    {"from": "component:default/web", "to": "resource:default/db", "type": "dependsOn"},
+    {"from": "component:default/web", "to": "group:default/team", "type": "ownedBy"},
+    {"from": "domain:default/payments", "to": "group:default/team", "type": "ownedBy"},
+    {"from": "domain:default/payments", "to": "domain:default/commerce", "type": "partOf"}
+  ],
+  "problems": [
+    "component:web: \"db\" in spec.dependsOn must name its kind, as in component:db or resource:db",
+    "component:web: \"portal\" in spec.dependencyOf must name its kind, as in component:portal or resource:portal"
+  ],
+  "layers": [
+    ["domain:default/payments", "domain:default/commerce"],
+    ["component:default/web"],
+    ["airesource:default/helper", "resource:default/db", "airesource:default/basics"],
+    ["group:default/team"]
+  ]
+}

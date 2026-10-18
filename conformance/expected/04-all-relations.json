@@ -1,11 +1,14 @@
 {
   "nodes": [
+    {"ref": "airesource:default/orders-runbook", "kind": "AiResource", "title": "orders-runbook", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "airesource:default/orders-toolkit", "kind": "AiResource", "title": "Orders Toolkit", "type": "plugin", "lifecycle": "experimental", "tags": [], "external": false},
     {"ref": "api:default/orders-api", "kind": "API", "title": "Orders API", "type": "openapi", "lifecycle": "production", "tags": [], "external": false},
     {"ref": "api:default/pricing-api", "kind": "API", "title": "pricing-api", "type": null, "lifecycle": null, "tags": [], "external": true},
     {"ref": "component:default/orders-service", "kind": "Component", "title": "Orders Service", "type": "service", "lifecycle": "production", "tags": [], "external": false},
     {"ref": "component:default/orders-web", "kind": "Component", "title": "orders-web", "type": null, "lifecycle": null, "tags": [], "external": true},
     {"ref": "component:default/orders-worker", "kind": "Component", "title": "Orders Worker", "type": "service", "lifecycle": "production", "tags": [], "external": false},
     {"ref": "domain:default/commerce", "kind": "Domain", "title": "Commerce", "type": null, "lifecycle": null, "tags": [], "external": false},
+    {"ref": "domain:default/retail", "kind": "Domain", "title": "Retail", "type": null, "lifecycle": null, "tags": [], "external": false},
     {"ref": "group:default/commerce-leadership", "kind": "Group", "title": "commerce-leadership", "type": null, "lifecycle": null, "tags": [], "external": true},
     {"ref": "group:default/orders-oncall", "kind": "Group", "title": "orders-oncall", "type": null, "lifecycle": null, "tags": [], "external": true},
     {"ref": "group:default/orders-team", "kind": "Group", "title": "Orders Team", "type": "team", "lifecycle": null, "tags": [], "external": false},
@@ -14,6 +17,9 @@
     {"ref": "user:default/ada.lovelace", "kind": "User", "title": "Ada Lovelace", "type": null, "lifecycle": null, "tags": [], "external": false}
   ],
   "edges": [
+    {"from": "airesource:default/orders-toolkit", "to": "airesource:default/orders-runbook", "type": "hasPart"},
+    {"from": "airesource:default/orders-toolkit", "to": "group:default/orders-team", "type": "ownedBy"},
+    {"from": "airesource:default/orders-toolkit", "to": "system:default/orders", "type": "partOf"},
     {"from": "api:default/orders-api", "to": "group:default/orders-team", "type": "ownedBy"},
     {"from": "api:default/orders-api", "to": "system:default/orders", "type": "partOf"},
     {"from": "component:default/orders-service", "to": "api:default/pricing-api", "type": "consumesApi"},
@@ -25,6 +31,8 @@
     {"from": "component:default/orders-worker", "to": "group:default/orders-team", "type": "ownedBy"},
     {"from": "component:default/orders-worker", "to": "component:default/orders-service", "type": "partOf"},
     {"from": "domain:default/commerce", "to": "group:default/commerce-leadership", "type": "ownedBy"},
+    {"from": "domain:default/retail", "to": "group:default/commerce-leadership", "type": "ownedBy"},
+    {"from": "domain:default/retail", "to": "domain:default/commerce", "type": "partOf"},
     {"from": "group:default/orders-team", "to": "group:default/commerce-leadership", "type": "childOf"},
     {"from": "group:default/orders-team", "to": "user:default/ada.lovelace", "type": "hasMember"},
     {"from": "group:default/orders-team", "to": "group:default/orders-oncall", "type": "parentOf"},
@@ -37,11 +45,11 @@
   "problems": [
   ],
   "layers": [
-    ["domain:default/commerce"],
+    ["domain:default/commerce", "domain:default/retail"],
     ["system:default/orders"],
-    ["component:default/orders-service", "component:default/orders-worker", "component:default/orders-web"],
-    ["api:default/orders-api", "resource:default/orders-db", "api:default/pricing-api"],
-    ["group:default/orders-team", "group:default/commerce-leadership", "group:default/orders-oncall"],
+    ["component:default/orders-worker", "component:default/orders-service", "component:default/orders-web"],
+    ["api:default/orders-api", "resource:default/orders-db", "airesource:default/orders-toolkit", "api:default/pricing-api", "airesource:default/orders-runbook"],
+    ["group:default/commerce-leadership", "group:default/orders-team", "group:default/orders-oncall"],
     ["user:default/ada.lovelace"]
   ]
 }

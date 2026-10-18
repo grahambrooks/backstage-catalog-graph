@@ -6,19 +6,18 @@ package com.grahambrooks.backstage.catalog.model
  * Only the direction actually written in the descriptor is modelled. Backstage's catalog also
  * materialises the inverse of every relation, but drawing both would double every edge.
  */
-enum class RelationType(
-    val displayName: String,
-    /** Kind assumed when a reference omits its kind, e.g. `owner: platform-team`. */
-    val defaultTargetKind: String,
-) {
-    OWNED_BY("ownedBy", "group"),
-    PART_OF("partOf", "system"),
-    PARENT_OF("parentOf", "group"),
-    CHILD_OF("childOf", "group"),
-    MEMBER_OF("memberOf", "group"),
-    HAS_MEMBER("hasMember", "user"),
-    PROVIDES_API("providesApi", "api"),
-    CONSUMES_API("consumesApi", "api"),
-    DEPENDS_ON("dependsOn", "component"),
-    DEPENDENCY_OF("dependencyOf", "component"),
+enum class RelationType(val displayName: String) {
+    OWNED_BY("ownedBy"),
+    PART_OF("partOf"),
+    PARENT_OF("parentOf"),
+    CHILD_OF("childOf"),
+    MEMBER_OF("memberOf"),
+    HAS_MEMBER("hasMember"),
+    PROVIDES_API("providesApi"),
+    CONSUMES_API("consumesApi"),
+    DEPENDS_ON("dependsOn"),
+    DEPENDENCY_OF("dependencyOf"),
+
+    /** Written by an alpha `AiResource` plugin's `skills` and a marketplace's `plugins`. */
+    HAS_PART("hasPart"),
 }

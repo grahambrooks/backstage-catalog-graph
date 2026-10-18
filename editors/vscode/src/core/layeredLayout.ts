@@ -98,7 +98,7 @@ export function nodeAt(layout: GraphLayout, x: number, y: number): NodeBounds | 
  * exact procedure is part of the cross-editor contract; see "Layout" in `conformance/spec.md`.
  *
  * A layer that contains its own hierarchy -- Groups with a `parent`, Components with a
- * `subcomponentOf` -- is then drawn as several rows, parents above children, so those edges run
+ * `subcomponentOf`, an AiResource plugin and its `skills` -- is then drawn as several rows, parents above children, so those edges run
  * vertically instead of along a single row through their siblings. That split is presentation
  * only: the layer and its order, which the conformance contract pins, are unchanged.
  */
@@ -298,7 +298,7 @@ function hierarchyRows(layer: CatalogNode[], graph: CatalogGraph): CatalogNode[]
   for (const edge of graph.edges) {
     let child: string;
     let parent: string;
-    if (edge.type === 'parentOf') {
+    if (edge.type === 'parentOf' || edge.type === 'hasPart') {
       [child, parent] = [edge.to, edge.from];
     } else if (edge.type === 'childOf' || edge.type === 'partOf') {
       [child, parent] = [edge.from, edge.to];

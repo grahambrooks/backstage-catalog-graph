@@ -19,6 +19,10 @@ export const ENTITY_KINDS = {
   GROUP: { displayName: 'Group', rank: 4 },
   USER: { displayName: 'User', rank: 5 },
   TEMPLATE: { displayName: 'Template', rank: 2 },
+  // Alpha (Backstage 1.51+, `catalog-backend-module-ai-model`): skills, rules, plugins and
+  // marketplaces for AI coding tools. Part of a System like an API or Resource, so it shares
+  // their layer.
+  AI_RESOURCE: { displayName: 'AiResource', rank: 3 },
   LOCATION: { displayName: 'Location', rank: 6 },
   OTHER: { displayName: 'Entity', rank: 6 },
 } as const satisfies Record<string, EntityKind>;

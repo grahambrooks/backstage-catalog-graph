@@ -36,7 +36,10 @@ a `Duplicate entity` problem.
 
 References are written `[<kind>:][<namespace>/]<name>`. Missing parts are filled in from context:
 
-- **kind** — from the `spec` field the reference appears in (see the table below).
+- **kind** — from the `spec` field the reference appears in (see the table below). A field with
+  no default kind requires the reference to name one: a bare `dependsOn: db` is rejected with the
+  problem `<entity>: "db" in spec.dependsOn must name its kind, as in component:db or resource:db`
+  and draws no edge. This follows Backstage, which gives these fields no default.
 - **namespace** — from the *referring entity's* own namespace, not from `default`.
 
 An explicit prefix always wins: `owner: user:grahambrooks` is a User, not a Group.
@@ -50,20 +53,34 @@ Each `spec` field maps to one relation. Only the direction actually written in t
 modelled; Backstage's materialised inverse relations are not drawn, because drawing both would
 double every edge.
 
-| `spec` field | Relation | Reference defaults to kind |
-|---|---|---|
-| `owner` | `ownedBy` | `Group` |
-| `system` | `partOf` | `System` |
-| `domain` | `partOf` | `Domain` |
-| `subcomponentOf` | `partOf` | `Component` |
-| `parent` | `childOf` | `Group` |
-| `children` | `parentOf` | `Group` |
-| `members` | `hasMember` | `User` |
-| `memberOf` | `memberOf` | `Group` |
-| `providesApis` | `providesApi` | `API` |
-| `consumesApis` | `consumesApi` | `API` |
-| `dependsOn` | `dependsOn` | `Component` |
-| `dependencyOf` | `dependencyOf` | `Component` |
+| `spec` field | Read on | Relation | Reference defaults to kind |
+|---|---|---|---|
+| `owner` | any kind | `ownedBy` | `Group` |
+| `system` | any kind | `partOf` | `System` |
+| `domain` | any kind | `partOf` | `Domain` |
+| `subcomponentOf` | any kind | `partOf` | `Component` |
+| `subdomainOf` | any kind | `partOf` | `Domain` |
+| `parent` | any kind | `childOf` | `Group` |
+| `children` | any kind | `parentOf` | `Group` |
+| `members` | any kind | `hasMember` | `User` |
+| `memberOf` | any kind | `memberOf` | `Group` |
+| `providesApis` | any kind | `providesApi` | `API` |
+| `consumesApis` | any kind | `consumesApi` | `API` |
+| `dependsOn` | `AiResource` | `dependsOn` | `AiResource` |
+| `dependsOn` | any other kind | `dependsOn` | none — must name its kind |
+| `dependencyOf` | any kind | `dependencyOf` | none — must name its kind |
+| `skills` | `AiResource` only | `hasPart` | `AiResource` |
+| `plugins` | `AiResource` only | `hasPart` | `AiResource` |
+
+Where a field has a row for one kind, that row applies to entities of that kind and the general
+row to the rest. A field read only on some kinds is ignored on others: `plugins` on a Component
+draws nothing (`case-kind-scoped-fields`).
+
+`AiResource` is an alpha kind (Backstage 1.51+, enabled by
+`@backstage/plugin-catalog-backend-module-ai-model`). Backstage reads `skills` only on a `plugin`
+and `plugins` only on a `marketplace`; scoping by kind rather than by `spec.type` is a deliberate
+simplification here, since neither field has another meaning on an `AiResource`. An MCP server is
+an `API` with `spec.type: mcp-server`; its `remotes` are URLs and produce no edges.
 
 Duplicate edges are collapsed: one edge per distinct `(from, to, relation)`.
 
@@ -99,7 +116,7 @@ layering keeps the picture stable as entities are added.
 | `Domain` | 0 |
 | `System` | 1 |
 | `Component`, `Template` | 2 |
-| `API`, `Resource` | 3 |
+| `API`, `Resource`, `AiResource` | 3 |
 | `Group` | 4 |
 | `User` | 5 |
 | `Location`, anything unrecognised | 6 |
@@ -119,11 +136,11 @@ Layout must terminate on cyclic and self-referencing graphs, and must place ever
 This part is presentation, not contract: nothing below is in the golden files.
 
 A layer can hold its own hierarchy -- Groups joined by `parent`/`children`, Components by
-`subcomponentOf`. Drawn as one row, those edges run sideways through their siblings. So after
+`subcomponentOf`, `AiResource` plugins and marketplaces by `skills`/`plugins`. Drawn as one row, those edges run sideways through their siblings. So after
 ordering, a layer is drawn as one row per hierarchy depth, parents above children:
 
 - A node's parents are the far ends of its `childOf` and `partOf` edges, and the near end of a
-  `parentOf` edge, counting only parents in the same layer.
+  `parentOf` or `hasPart` edge, counting only parents in the same layer.
 - Depth is 0 with no parent, otherwise one more than the deepest parent. A node reached again
   while its own depth is being worked out counts as depth 0, which is what ends a cycle.
 - Each row keeps the layer's order. Then each row below the first gets one stable barycentre

@@ -17,7 +17,7 @@ import com.grahambrooks.backstage.catalog.model.RelationType
  * Within a layer, nodes are ordered by the barycentre heuristic to cut edge crossings.
  *
  * A layer that contains its own hierarchy -- Groups with a `parent`, Components with a
- * `subcomponentOf` -- is then drawn as several rows, parents above children, so those edges run
+ * `subcomponentOf`, an AiResource plugin and its `skills` -- is then drawn as several rows, parents above children, so those edges run
  * vertically instead of along a single row through their siblings. That split is presentation
  * only: the layer and its order, which the conformance contract pins, are unchanged.
  */
@@ -111,7 +111,7 @@ class LayeredLayout(
         val parents = mutableMapOf<EntityRef, MutableList<EntityRef>>()
         for (edge in graph.edges) {
             val (child, parent) = when (edge.type) {
-                RelationType.PARENT_OF -> edge.to to edge.from
+                RelationType.PARENT_OF, RelationType.HAS_PART -> edge.to to edge.from
                 RelationType.CHILD_OF, RelationType.PART_OF -> edge.from to edge.to
                 else -> continue
             }

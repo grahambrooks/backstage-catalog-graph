@@ -31,6 +31,7 @@ const RELATION_ORDER: readonly RelationType[] = [
   'consumesApi',
   'dependsOn',
   'dependencyOf',
+  'hasPart',
 ];
 
 /**

@@ -1,0 +1,41 @@
+{
+  "nodes": [
+    {"ref": "airesource:default/base-coding-standards", "kind": "AiResource", "title": "Base Coding Standards", "type": "skill", "lifecycle": "production", "tags": [], "external": false},
+    {"ref": "airesource:default/frontend-design", "kind": "AiResource", "title": "Frontend Design", "type": "skill", "lifecycle": "production", "tags": [], "external": false},
+    {"ref": "airesource:default/frontend-pack", "kind": "AiResource", "title": "Frontend Pack", "type": "plugin", "lifecycle": "production", "tags": [], "external": false},
+    {"ref": "airesource:default/internal-marketplace", "kind": "AiResource", "title": "Internal Marketplace", "type": "marketplace", "lifecycle": "production", "tags": [], "external": false},
+    {"ref": "airesource:default/no-direct-db-access", "kind": "AiResource", "title": "No Direct DB Access", "type": "rule", "lifecycle": "production", "tags": [], "external": false},
+    {"ref": "airesource:default/security-pack", "kind": "AiResource", "title": "security-pack", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "api:default/backstage-mcp-server", "kind": "API", "title": "Backstage MCP Server", "type": "mcp-server", "lifecycle": "experimental", "tags": [], "external": false},
+    {"ref": "group:default/ai-platform-team", "kind": "Group", "title": "ai-platform-team", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "group:default/platform-team", "kind": "Group", "title": "platform-team", "type": null, "lifecycle": null, "tags": [], "external": true},
+    {"ref": "system:default/ai-tooling", "kind": "System", "title": "AI Tooling", "type": null, "lifecycle": null, "tags": [], "external": false}
+  ],
+  "edges": [
+    {"from": "airesource:default/base-coding-standards", "to": "group:default/ai-platform-team", "type": "ownedBy"},
+    {"from": "airesource:default/base-coding-standards", "to": "system:default/ai-tooling", "type": "partOf"},
+    {"from": "airesource:default/frontend-design", "to": "airesource:default/base-coding-standards", "type": "dependsOn"},
+    {"from": "airesource:default/frontend-design", "to": "group:default/ai-platform-team", "type": "ownedBy"},
+    {"from": "airesource:default/frontend-design", "to": "system:default/ai-tooling", "type": "partOf"},
+    {"from": "airesource:default/frontend-pack", "to": "airesource:default/base-coding-standards", "type": "hasPart"},
+    {"from": "airesource:default/frontend-pack", "to": "airesource:default/frontend-design", "type": "hasPart"},
+    {"from": "airesource:default/frontend-pack", "to": "group:default/ai-platform-team", "type": "ownedBy"},
+    {"from": "airesource:default/frontend-pack", "to": "system:default/ai-tooling", "type": "partOf"},
+    {"from": "airesource:default/internal-marketplace", "to": "airesource:default/frontend-pack", "type": "hasPart"},
+    {"from": "airesource:default/internal-marketplace", "to": "airesource:default/security-pack", "type": "hasPart"},
+    {"from": "airesource:default/internal-marketplace", "to": "group:default/ai-platform-team", "type": "ownedBy"},
+    {"from": "airesource:default/internal-marketplace", "to": "system:default/ai-tooling", "type": "partOf"},
+    {"from": "airesource:default/no-direct-db-access", "to": "group:default/platform-team", "type": "ownedBy"},
+    {"from": "airesource:default/no-direct-db-access", "to": "system:default/ai-tooling", "type": "partOf"},
+    {"from": "api:default/backstage-mcp-server", "to": "group:default/ai-platform-team", "type": "ownedBy"},
+    {"from": "api:default/backstage-mcp-server", "to": "system:default/ai-tooling", "type": "partOf"},
+    {"from": "system:default/ai-tooling", "to": "group:default/ai-platform-team", "type": "ownedBy"}
+  ],
+  "problems": [
+  ],
+  "layers": [
+    ["system:default/ai-tooling"],
+    ["api:default/backstage-mcp-server", "airesource:default/base-coding-standards", "airesource:default/frontend-design", "airesource:default/frontend-pack", "airesource:default/internal-marketplace", "airesource:default/no-direct-db-access", "airesource:default/security-pack"],
+    ["group:default/ai-platform-team", "group:default/platform-team"]
+  ]
+}

@@ -1,0 +1,103 @@
+# The alpha AiResource kind (Backstage 1.51+, enabled by
+# @backstage/plugin-catalog-backend-module-ai-model), and an MCP server, which is an API.
+#
+#   skill        dependsOn -> other skills      (a bare name means an AiResource)
+#   plugin       skills    -> hasPart
+#   marketplace  plugins   -> hasPart
+#   rule         owner and system only
+#
+# The marketplace, plugin and skills form a hierarchy inside one layer, so they draw as rows:
+# marketplace above plugin above skills.
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: ai-tooling
+  title: AI Tooling
+spec:
+  owner: ai-platform-team
+---
+apiVersion: backstage.io/v1alpha1
+kind: AiResource
+metadata:
+  name: frontend-design
+  title: Frontend Design
+  description: Skill for creating production-grade frontend interfaces
+spec:
+  type: skill
+  lifecycle: production
+  owner: ai-platform-team
+  system: ai-tooling
+  disciplines: [web]
+  categories: [framework]
+  agents: [claude-code]
+  dependsOn:
+    - base-coding-standards
+---
+apiVersion: backstage.io/v1alpha1
+kind: AiResource
+metadata:
+  name: base-coding-standards
+  title: Base Coding Standards
+spec:
+  type: skill
+  lifecycle: production
+  owner: ai-platform-team
+  system: ai-tooling
+---
+apiVersion: backstage.io/v1alpha1
+kind: AiResource
+metadata:
+  name: no-direct-db-access
+  title: No Direct DB Access
+  description: Prevent AI tools from generating direct database queries
+spec:
+  type: rule
+  lifecycle: production
+  owner: platform-team
+  system: ai-tooling
+  category: security
+  rationale: All database access must go through the service layer to keep audit trails
+---
+apiVersion: backstage.io/v1alpha1
+kind: AiResource
+metadata:
+  name: frontend-pack
+  title: Frontend Pack
+spec:
+  type: plugin
+  lifecycle: production
+  owner: ai-platform-team
+  system: ai-tooling
+  version: 1.2.0
+  skills:
+    - frontend-design
+    - base-coding-standards
+---
+apiVersion: backstage.io/v1alpha1
+kind: AiResource
+metadata:
+  name: internal-marketplace
+  title: Internal Marketplace
+spec:
+  type: marketplace
+  lifecycle: production
+  owner: ai-platform-team
+  system: ai-tooling
+  plugins:
+    - frontend-pack
+    - airesource:default/security-pack
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: backstage-mcp-server
+  title: Backstage MCP Server
+  description: An MCP server is an API with type mcp-server; its remotes are URLs, not references
+spec:
+  type: mcp-server
+  lifecycle: experimental
+  owner: ai-platform-team
+  system: ai-tooling
+  remotes:
+    - type: streamable-http
+      url: http://localhost:7007/api/mcp-actions/v1

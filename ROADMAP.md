@@ -80,7 +80,7 @@ placeholders, layered layout. `tower-lsp` for the protocol, `serde_yaml`-free YA
 No editor integration in this phase. The deliverable is a binary that speaks LSP over stdio and
 a third runner for the shared corpus.
 
-> **Done when** `cargo test` runs all 18 conformance cases against `conformance/expected/` and
+> **Done when** `cargo test` runs all 20 conformance cases against `conformance/expected/` and
 > passes, and `cargo clippy -- -D warnings` and `cargo fmt --check` are clean.
 
 ### Phase 2 — Diagnostics and navigation

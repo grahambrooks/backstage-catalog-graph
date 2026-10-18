@@ -7,7 +7,7 @@ import {
 } from './catalogGraph';
 import { kindOf } from './entityKind';
 import { DEFAULT_NAMESPACE, EntityRef, normalizeKind, parseRef, shortLabel } from './entityRef';
-import { SPEC_RULES } from './relationType';
+import { rulesFor } from './relationType';
 import { RawDocument } from './rawDocument';
 
 /**
@@ -55,9 +55,18 @@ export function buildCatalogGraph(documents: readonly RawDocument[]): CatalogGra
     if (!spec) {
       continue;
     }
-    for (const rule of SPEC_RULES) {
+    for (const rule of rulesFor(ref.kind)) {
       for (const raw of stringsAt(spec, rule.field)) {
-        const target = parseRef(raw, rule.targetKind, ref.namespace);
+        if (rule.targetKind === undefined && !raw.includes(':') && raw.trim().length > 0) {
+          problems.push({
+            message:
+              `${shortLabel(ref)}: "${raw}" in spec.${rule.field} must name its kind, ` +
+              `as in component:${raw} or resource:${raw}`,
+            sourceOffset: document.offset,
+          });
+          continue;
+        }
+        const target = parseRef(raw, rule.targetKind ?? '', ref.namespace);
         if (!target) {
           problems.push({
             message:

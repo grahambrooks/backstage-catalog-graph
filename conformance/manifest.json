@@ -56,6 +56,11 @@
       "source": "example"
     },
     {
+      "id": "11-ai-resources",
+      "input": "examples/11-ai-resources/catalog-info.yaml",
+      "source": "example"
+    },
+    {
       "id": "case-casing",
       "input": "conformance/cases/casing.yaml",
       "source": "case"
@@ -68,6 +73,11 @@
     {
       "id": "case-empty",
       "input": "conformance/cases/empty.yaml",
+      "source": "case"
+    },
+    {
+      "id": "case-kind-scoped-fields",
+      "input": "conformance/cases/kind-scoped-fields.yaml",
       "source": "case"
     },
     {
