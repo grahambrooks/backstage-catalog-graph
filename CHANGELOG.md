@@ -39,6 +39,11 @@ in step between editors. The VS Code extension also carries
   edges within one row arc over it. Rows wider than about 1200px wrap.
 - Fit to Window can zoom out to 10%, so a catalog of a few dozen entities fits whole, and a file
   opens fitted to the pane.
+- Faster on large files: focus moves lay out only the focused neighbourhood (the full layout is
+  kept until the file or a toggle changes), text truncation bisects instead of trimming a
+  character at a time, fonts and text widths are cached, and the JetBrains plugin reads the YAML
+  in a background read action instead of on the UI thread. A focus move keeps the zoom when the
+  neighbourhood fits.
 - Conformance runners read the layout's logical layers rather than grouping nodes by position.
 - **Contract:** `dependsOn` and `dependencyOf` on anything but an `AiResource` no longer assume
   `Component`. As in Backstage, a reference there must name its kind; a bare name is reported as

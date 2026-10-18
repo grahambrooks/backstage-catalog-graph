@@ -6,6 +6,7 @@ import com.grahambrooks.backstage.catalog.model.CatalogNode
 import com.grahambrooks.backstage.catalog.model.CatalogProblem
 import com.grahambrooks.backstage.catalog.model.EntityRef
 import com.grahambrooks.backstage.catalog.psi.YamlDocumentReader
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.EditorFactory
@@ -22,9 +23,9 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiManager
 import com.intellij.util.Alarm
+import com.intellij.util.concurrency.AppExecutorUtil
 import org.jetbrains.yaml.psi.YAMLFile
 import java.beans.PropertyChangeListener
 import javax.swing.JComponent
@@ -48,6 +49,13 @@ class CatalogGraphFileEditor(
 
     /** The entity under the caret when it last moved, so only a move into another entity reacts. */
     private var caretEntity: EntityRef? = null
+
+    /**
+     * Counts rebuilds, so that a background read finishing after a newer one started is
+     * dropped rather than overwriting a fresher graph. `coalesceBy` would do this, but it
+     * rejects this editor as a key ("Equality should be unique") and the rebuild never ran.
+     */
+    private var rebuildGeneration = 0
 
     /** The document stamp [graph] was built from; its offsets mean nothing for any other. */
     private var builtStamp: Long = -1
@@ -107,7 +115,9 @@ class CatalogGraphFileEditor(
 
     override fun selectNotify() {
         // The first paint is deferred until the tab is actually shown, so opening a catalog file
-        // in the plain text view costs nothing.
+        // in the plain text view costs nothing. Coming back to a tab whose document has not
+        // changed costs nothing either.
+        if (built && document()?.modificationStamp == builtStamp) return
         rebuild(preserveViewport = built)
     }
 
@@ -127,25 +137,34 @@ class CatalogGraphFileEditor(
     /**
      * Must be called on the EDT.
      *
-     * The rebuild is deferred until the PSI has caught up with the document rather than forcing
-     * a commit here: committing is a model change, and both callers -- [selectNotify] during
-     * editor open, and the debounce alarm -- run in write-unsafe contexts where forcing one
-     * fails a platform assertion.
+     * The PSI is read in a background, non-blocking read action that waits for the documents to
+     * be committed rather than forcing a commit: committing is a model change, and the callers --
+     * [selectNotify] during editor open, and the debounce alarm -- run in write-unsafe contexts
+     * where forcing one fails a platform assertion. Reading off the EDT keeps typing smooth in a
+     * large file; a newer rebuild supersedes a pending one, and closing the editor cancels it.
+     * Only the result is applied on the EDT, where the layout needs font metrics anyway.
      */
     private fun rebuild(preserveViewport: Boolean) {
         if (project.isDisposed || !file.isValid) return
-        PsiDocumentManager.getInstance(project).performWhenAllCommitted {
-            if (project.isDisposed || !file.isValid) return@performWhenAllCommitted
-            val graph = ReadAction.compute<CatalogGraph, RuntimeException> { readGraph() }
-            built = true
-            this.graph = graph
-            builtStamp = document()?.modificationStamp ?: -1
-            view.show(graph, preserveViewport)
-            deferredCaret?.let { offset ->
-                deferredCaret = null
-                followCaret(offset)
-            }
+        val generation = ++rebuildGeneration
+        ReadAction.nonBlocking<Pair<CatalogGraph, Long>> {
+            // The stamp is read with the PSI, so it names exactly the text the graph came from.
+            readGraph() to (document()?.modificationStamp ?: -1)
         }
+            .withDocumentsCommitted(project)
+            .expireWith(this)
+            .finishOnUiThread(ModalityState.defaultModalityState()) { (graph, stamp) ->
+                if (generation != rebuildGeneration) return@finishOnUiThread
+                built = true
+                this.graph = graph
+                builtStamp = stamp
+                view.show(graph, preserveViewport)
+                deferredCaret?.let { offset ->
+                    deferredCaret = null
+                    followCaret(offset)
+                }
+            }
+            .submit(AppExecutorUtil.getAppExecutorService())
     }
 
     private fun followCaret(offset: Int) {

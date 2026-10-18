@@ -68,9 +68,10 @@ verify-jetbrains: ## Run the JetBrains plugin verifier against real IDE builds
 	$(GRADLE) verifyPlugin
 
 # A second runIde while a sandbox is open is handed to that instance and exits at once, leaving
-# the old plugin loaded -- so refuse rather than appear to work.
+# the old plugin loaded -- so refuse rather than appear to work. The bracket keeps the pattern
+# from matching this recipe's own shell, whose command line contains the pattern's text.
 run-jetbrains: ## Launch a sandbox IDE with the plugin, opening FILE
-	@if pgrep -f 'intellijPlatform/sandbox' >/dev/null; then \
+	@if pgrep -f '[i]ntellijPlatform/sandbox' >/dev/null; then \
 		echo "A sandbox IDE is already running; close it first, or it keeps the old plugin."; \
 		exit 1; \
 	fi

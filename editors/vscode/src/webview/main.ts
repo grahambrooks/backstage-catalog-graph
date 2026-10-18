@@ -1,6 +1,7 @@
 import {
   CatalogGraph,
   CatalogNode,
+  EMPTY_GRAPH,
   declaredNodes,
   entityAt,
   externalNodes,
@@ -94,7 +95,7 @@ const problemList = document.getElementById('problem-list') as HTMLElement;
 const findInput = document.getElementById('find') as HTMLInputElement;
 const findStatus = document.getElementById('find-status') as HTMLElement;
 
-let graph: CatalogGraph = { nodes: new Map(), edges: [], problems: [] };
+let graph: CatalogGraph = EMPTY_GRAPH;
 let layout: GraphLayout = EMPTY_LAYOUT;
 let viewport: Viewport = { scale: 1, originX: 0, originY: 0 };
 let selected: string | undefined;
@@ -161,6 +162,7 @@ window.addEventListener('message', (event: MessageEvent) => {
 // Colours are written into the SVG as attributes, so a theme switch -- which VS Code signals by
 // re-stamping the body's classes -- needs a repaint, not just new CSS.
 new MutationObserver(() => {
+  measureText.clear();
   render();
   renderOutlineIfShowing();
 }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
@@ -203,7 +205,8 @@ outlineCheckbox.addEventListener('change', () => {
 });
 focusCheckbox.addEventListener('change', () => {
   focusMode = focusCheckbox.checked;
-  render();
+  applyFocus();
+  draw();
   fitToWindow();
 });
 ownersCheckbox.addEventListener('change', () => {
@@ -332,7 +335,7 @@ function reveal(key: string, zoomToRead: boolean): void {
   }
   // Crossing the label threshold changes what is drawn, not just where.
   if (zoomed) {
-    render();
+    draw();
   } else {
     applyViewport();
   }
@@ -360,30 +363,69 @@ function visibleGraph(): CatalogGraph {
   };
 }
 
-/** What is actually laid out and painted: the graph after the external and owner toggles. */
-function drawnGraph(): CatalogGraph {
-  // Badges come from the whole graph: an owner written in this file is a fact about the entity,
-  // not a placeholder, so hiding external references does not hide it.
-  allOwners = foldOwners(graph).owners;
-  owners = ownersAsBadges ? allOwners : new Map();
-  return ownersAsBadges ? foldOwners(visibleGraph()).graph : visibleGraph();
+/** The graph after the external and owner toggles, before focus mode cuts it down. */
+let unfocused: CatalogGraph = EMPTY_GRAPH;
+/** What is drawn: `unfocused`, or in focus mode the selection's neighbourhood. */
+let visible: CatalogGraph = EMPTY_GRAPH;
+
+/** Lays out the graph and draws it: for a new graph, a toggle, or a theme change. */
+function render(): void {
+  relayout();
+  draw();
 }
 
-function render(): void {
-  const unfocused = drawnGraph();
+/**
+ * Everything that depends on the graph and the toggles: owner badges, Systems, and the full
+ * layout. Moving the focus does not change any of it, so a focus move only re-runs `applyFocus`
+ * -- one small layout instead of the whole graph twice.
+ */
+function relayout(): void {
+  // Badges come from the whole graph: an owner written in this file is a fact about the entity,
+  // not a placeholder, so hiding external references does not hide it.
+  const folded = foldOwners(graph);
+  allOwners = folded.owners;
+  owners = ownersAsBadges ? allOwners : new Map();
+  const shown = visibleGraph();
+  unfocused = !ownersAsBadges ? shown : shown === graph ? folded.graph : foldOwners(shown).graph;
   clusters = groupBySystem ? systemClusters(unfocused) : new Map();
-  const options = { maxRowWidth: MAX_ROW_WIDTH, clusters };
-  fullLayout = layoutGraph(unfocused, measure, options);
+  fullLayout = layoutGraph(unfocused, measure, layoutOptions());
+  applyFocus();
+}
+
+function layoutOptions() {
+  return { maxRowWidth: MAX_ROW_WIDTH, clusters };
+}
+
+/** The drawn graph and its layout: the full layout, or in focus mode the selection's neighbourhood. */
+function applyFocus(): void {
   const focus = focusMode && selected && unfocused.nodes.has(selected) ? selected : undefined;
-  const visible = focus
+  visible = focus
     ? focusAround(
         unfocused,
         focus,
         [...owners].filter(([, list]) => list.some((owner) => keyOf(owner) === focus)).map(([key]) => key),
       )
     : unfocused;
-  layout = focus ? layoutGraph(visible, measure, options) : fullLayout;
+  layout = focus ? layoutGraph(visible, measure, layoutOptions()) : fullLayout;
   router = new EdgeRouter(layout);
+}
+
+/**
+ * After a focus move: keeps the user's zoom and centres the new neighbourhood if it fits at that
+ * zoom, and zooms out only when it does not.
+ */
+function fitIfNeeded(): void {
+  const rect = svg.getBoundingClientRect();
+  if (layout.width * viewport.scale <= rect.width && layout.height * viewport.scale <= rect.height) {
+    centreContent();
+    applyViewport();
+  } else {
+    fitToWindow();
+  }
+}
+
+/** Rebuilds the SVG from the current layout -- no layout work. */
+function draw(): void {
 
   while (svg.firstChild) {
     svg.removeChild(svg.firstChild);
@@ -441,11 +483,22 @@ const measureText = (() => {
   scratch.appendChild(text);
   document.body.appendChild(scratch);
 
-  return (value: string, className: string): number => {
-    text.setAttribute('class', className);
-    text.textContent = value;
-    return text.getComputedTextLength();
+  // Each measurement forces a synchronous layout, and the same strings are measured on every
+  // draw, so widths are remembered. Cleared when the theme changes, in case its font does.
+  const widths = new Map<string, number>();
+  const measure = (value: string, className: string): number => {
+    const key = `${className}\u0000${value}`;
+    let width = widths.get(key);
+    if (width === undefined) {
+      text.setAttribute('class', className);
+      text.textContent = value;
+      width = text.getComputedTextLength();
+      widths.set(key, width);
+    }
+    return width;
   };
+  measure.clear = () => widths.clear();
+  return measure;
 })();
 
 function measure(node: CatalogNode): { width: number; height: number } {
@@ -994,8 +1047,9 @@ function select(key: string | undefined): void {
   highlighted = key ? neighbourhoodOf(graph, key) : new Set();
   if (focusMode && changed) {
     // The focus follows the selection, so what is drawn changes, not just its emphasis.
-    render();
-    fitToWindow();
+    applyFocus();
+    draw();
+    fitIfNeeded();
   }
   applyHighlight();
   renderStatus();
@@ -1075,7 +1129,7 @@ function zoomAround(factor: number, anchor: { x: number; y: number }): void {
 
   // Edge labels appear and disappear at a threshold, so crossing it needs a re-render.
   if (wasBelowLabelThreshold !== next < LABEL_SCALE_THRESHOLD) {
-    render();
+    draw();
   } else {
     applyViewport();
   }
@@ -1195,16 +1249,23 @@ function tooltipFor(node: CatalogNode): string {
   return lines.join('\n');
 }
 
+/** The longest prefix of `value` that fits with an ellipsis, found by bisection. */
 function truncate(value: string, className: string, boxWidth: number): string {
   const available = boxWidth - ACCENT_WIDTH - TEXT_INSET * 2;
   if (measureText(value, className) <= available) {
     return value;
   }
-  let end = value.length;
-  while (end > 1 && measureText(`${value.slice(0, end)}…`, className) > available) {
-    end--;
+  let low = 1;
+  let high = value.length;
+  while (low < high) {
+    const middle = Math.ceil((low + high) / 2);
+    if (measureText(`${value.slice(0, middle)}…`, className) <= available) {
+      low = middle;
+    } else {
+      high = middle - 1;
+    }
   }
-  return `${value.slice(0, end)}…`;
+  return `${value.slice(0, low)}…`;
 }
 
 function keyFor(bounds: NodeBounds): string {

@@ -20,6 +20,8 @@ Versions are CalVer (`YYYY.M.D`) and are kept in step with the JetBrains plugin.
 
 - Team and subcomponent hierarchies drawn as rows, parents above children; edges routed around
   nodes; very wide rows wrap; zoom out to 10%.
+- Faster focus moves and redraws on large files, and a focus move keeps the zoom when the
+  neighbourhood fits.
 
 - A bare `dependsOn`/`dependencyOf` reference on a Component or Resource is now reported as
   needing a kind, as Backstage requires, instead of being assumed to be a Component.

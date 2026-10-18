@@ -99,8 +99,9 @@ code --extensionDevelopmentPath="$PWD" --new-window ../../examples
 - **VS Code does not re-read the bundle.** After `npm run bundle`, run *Developer: Reload Window*
   in the Extension Development Host.
 - **Never force a PSI commit from `selectNotify` or a debounce alarm** — both are write-unsafe
-  contexts and the platform logs a SEVERE naming the plugin. Use
-  `PsiDocumentManager.performWhenAllCommitted`.
+  contexts and the platform logs a SEVERE naming the plugin. The rebuild uses
+  `ReadAction.nonBlocking { … }.withDocumentsCommitted(project).expireWith(this)`, which waits for
+  the commit instead, reads off the EDT, and is cancelled when the editor closes.
 - Unit tests cannot catch either of the last two. Launch the editor before claiming a UI change
   works; that is how the write-unsafe bug was found.
 

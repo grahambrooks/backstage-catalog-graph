@@ -100,6 +100,12 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
     private var clusters: Map<EntityRef, EntityRef> = emptyMap()
     private var router: EdgeRouter = EdgeRouter(GraphLayout.EMPTY)
 
+    /** The graph after the external and owner toggles, before focus mode cuts it down. */
+    private var unfocused: CatalogGraph = CatalogGraph.EMPTY
+
+    /** Sized with the current fonts and toggles; reused for each focus move. */
+    private lateinit var engine: LayeredLayout
+
     /** Set when a fit was asked for before the panel had a size to fit into. */
     private var fitPending: Boolean = false
 
@@ -174,7 +180,7 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
     fun setFocusMode(on: Boolean) {
         if (focusMode == on) return
         focusMode = on
-        rebuildLayout()
+        applyFocus()
         fitToWindow()
         repaint()
     }
@@ -265,23 +271,29 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         )
     }
 
+    /**
+     * Everything that depends on the graph and the toggles: owner badges, Systems, and the full
+     * layout. Moving the focus does not change any of it, so a focus move only re-runs
+     * [applyFocus] -- one small layout instead of the whole graph twice.
+     */
     private fun rebuildLayout() {
         // Badges come from the whole graph: an owner written in this file is a fact about the
         // entity, not a placeholder, so hiding external references does not hide it.
-        allOwners = OwnerBadges.fold(graph).owners
+        val folded = OwnerBadges.fold(graph)
+        allOwners = folded.owners
         owners = if (ownersAsBadges) allOwners else emptyMap()
-        val unfocused = if (ownersAsBadges) OwnerBadges.fold(visibleGraph()).graph else visibleGraph()
-        val focus = selected?.takeIf { focusMode && it in unfocused.nodes }
-        drawnGraph = focus?.let { ref ->
-            Focus.around(unfocused, ref, owned = owners.filterValues { list -> list.any { it.ref == ref } }.keys)
-        } ?: unfocused
-
+        val visible = visibleGraph()
+        unfocused = when {
+            !ownersAsBadges -> visible
+            visible === graph -> folded.graph
+            else -> OwnerBadges.fold(visible).graph
+        }
         clusters = if (groupBySystem) SystemClusters.of(unfocused) else emptyMap()
 
-        val metrics = getFontMetrics(titleFont())
-        val subMetrics = getFontMetrics(subtitleFont())
-        val badgeMetrics = getFontMetrics(labelFont())
-        val engine = LayeredLayout(maxRowWidth = MAX_ROW_WIDTH, clusters = clusters, sizer = { node ->
+        val metrics = getFontMetrics(fonts().title)
+        val subMetrics = getFontMetrics(fonts().subtitle)
+        val badgeMetrics = getFontMetrics(fonts().label)
+        engine = LayeredLayout(maxRowWidth = MAX_ROW_WIDTH, clusters = clusters, sizer = { node ->
             val titleWidth = metrics.stringWidth(node.title).toDouble()
             val subtitleWidth = subMetrics.stringWidth(subtitleOf(node)).toDouble()
             val badge = badgeText(node.ref)
@@ -291,9 +303,30 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
             width to if (badge == null) NODE_HEIGHT else NODE_HEIGHT_WITH_BADGE
         })
         fullLayout = engine.layout(unfocused)
+        applyFocus()
+    }
+
+    /** The drawn graph and its layout: [fullLayout], or in focus mode the selection's neighbourhood. */
+    private fun applyFocus() {
+        val focus = selected?.takeIf { focusMode && it in unfocused.nodes }
+        drawnGraph = focus?.let { ref ->
+            Focus.around(unfocused, ref, owned = owners.filterValues { list -> list.any { it.ref == ref } }.keys)
+        } ?: unfocused
         layout = if (focus == null) fullLayout else engine.layout(drawnGraph)
         router = EdgeRouter(layout)
         onLayoutChanged?.invoke()
+    }
+
+    /**
+     * After a focus move: keeps the user's zoom and centres the new neighbourhood if it fits at
+     * that zoom, and zooms out only when it does not.
+     */
+    private fun fitIfNeeded() {
+        if (layout.width * scale <= width && layout.height * scale <= height) {
+            centreContent()
+        } else {
+            fitToWindow()
+        }
     }
 
     private fun badgeText(ref: EntityRef): String? =
@@ -351,7 +384,7 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         } else {
             "No entities could be read -- see the problems above"
         }
-        g2.font = titleFont()
+        g2.font = fonts().title
         g2.color = CatalogPalette.subtitle
         val metrics = g2.fontMetrics
         g2.drawString(
@@ -408,7 +441,7 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         g2.draw(shape)
 
         val textX = (bounds.x + ACCENT_WIDTH + TEXT_INSET).toFloat()
-        g2.font = if (node.external) titleFont().deriveFont(Font.ITALIC) else titleFont()
+        g2.font = if (node.external) fonts().titleItalic else fonts().title
         g2.color = CatalogPalette.title
         val available = (bounds.width - ACCENT_WIDTH - TEXT_INSET * 2).toInt()
         g2.drawString(
@@ -417,7 +450,7 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
             (bounds.y + 22).toFloat(),
         )
 
-        g2.font = subtitleFont()
+        g2.font = fonts().subtitle
         g2.color = CatalogPalette.subtitle
         g2.drawString(
             truncate(subtitleOf(node), g2, available),
@@ -436,7 +469,7 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
      */
     private fun paintOwnerBadge(g2: Graphics2D, bounds: NodeBounds, text: String, available: Int) {
         val owner = owners.getValue(bounds.node.ref).first()
-        g2.font = labelFont()
+        g2.font = fonts().label
         val metrics = g2.fontMetrics
         val label = truncate(text, g2, (available - BADGE_CHROME).toInt())
         val x = bounds.x + ACCENT_WIDTH + TEXT_INSET - BADGE_PADDING / 2
@@ -458,7 +491,7 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         g2.fill(Ellipse2D.Double(x + BADGE_PADDING, y + 4, dot, dot))
 
         g2.color = CatalogPalette.title
-        if (owner.external) g2.font = labelFont().deriveFont(Font.ITALIC)
+        if (owner.external) g2.font = fonts().labelItalic
         g2.drawString(
             label,
             (x + BADGE_PADDING + dot + BADGE_GAP).toFloat(),
@@ -556,7 +589,7 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
     private fun paintEdgeLabel(g2: Graphics2D, curve: CubicCurve2D.Double, edge: CatalogEdge) {
         val mid = pointOnCurve(curve, 0.5)
         val text = edge.type.displayName
-        g2.font = labelFont()
+        g2.font = fonts().label
         val metrics = g2.fontMetrics
         val textWidth = metrics.stringWidth(text)
         val boxWidth = textWidth + 10.0
@@ -695,8 +728,8 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         selected = ref
         highlighted = ref?.let { graph.neighbourhoodOf(it) }.orEmpty()
         if (focusMode) {
-            rebuildLayout()
-            fitToWindow()
+            applyFocus()
+            fitIfNeeded()
         }
         onSelectionChanged?.invoke(ref?.let { graph.nodes[it] })
         repaint()
@@ -768,13 +801,18 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         }
     }
 
+    /** The longest prefix of [text] that fits [available] with an ellipsis, found by bisection. */
     private fun truncate(text: String, g2: Graphics2D, available: Int): String {
         val metrics = g2.fontMetrics
         if (metrics.stringWidth(text) <= available) return text
         val ellipsis = "…"
-        var end = text.length
-        while (end > 1 && metrics.stringWidth(text.take(end) + ellipsis) > available) end--
-        return text.take(end) + ellipsis
+        var low = 1
+        var high = text.length
+        while (low < high) {
+            val middle = (low + high + 1) / 2
+            if (metrics.stringWidth(text.take(middle) + ellipsis) <= available) low = middle else high = middle - 1
+        }
+        return text.take(low) + ellipsis
     }
 
     private fun escape(text: String): String = text
@@ -782,9 +820,30 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         .replace("<", "&lt;")
         .replace(">", "&gt;")
 
-    private fun titleFont(): Font = UIUtil.getLabelFont().deriveFont(Font.BOLD, JBUI.scaleFontSize(13f).toFloat())
-    private fun subtitleFont(): Font = UIUtil.getLabelFont().deriveFont(Font.PLAIN, JBUI.scaleFontSize(11f).toFloat())
-    private fun labelFont(): Font = UIUtil.getLabelFont().deriveFont(Font.PLAIN, JBUI.scaleFontSize(10f).toFloat())
+    /** Every font the canvas paints with, derived once rather than per node per paint. */
+    private class Fonts {
+        private val base: Font = UIUtil.getLabelFont()
+        val title: Font = base.deriveFont(Font.BOLD, JBUI.scaleFontSize(13f).toFloat())
+        val titleItalic: Font = title.deriveFont(Font.BOLD or Font.ITALIC)
+        val subtitle: Font = base.deriveFont(Font.PLAIN, JBUI.scaleFontSize(11f).toFloat())
+        val label: Font = base.deriveFont(Font.PLAIN, JBUI.scaleFontSize(10f).toFloat())
+        val labelItalic: Font = label.deriveFont(Font.ITALIC)
+    }
+
+    private var fontCache: Fonts? = null
+
+    private fun fonts(): Fonts = fontCache ?: Fonts().also { fontCache = it }
+
+    /** A theme or font-size change: derive the fonts again, and re-measure the nodes with them. */
+    override fun updateUI() {
+        super.updateUI()
+        fontCache = null
+        // Swing calls this from the superclass constructor too, before any field exists.
+        if (this::engine.isInitialized) {
+            rebuildLayout()
+            repaint()
+        }
+    }
 
     private companion object {
         const val NODE_HEIGHT = 52.0
