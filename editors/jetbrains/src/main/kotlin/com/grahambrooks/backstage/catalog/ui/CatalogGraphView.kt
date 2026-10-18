@@ -95,7 +95,9 @@ class CatalogGraphView(
     init {
         val toolbar = ActionManager.getInstance()
             .createActionToolbar(TOOLBAR_PLACE, buildActions(), true)
-        toolbar.targetComponent = canvas
+        // The view, not the canvas: the toolbar updates its buttons from its target, and the
+        // canvas is hidden while the outline shows -- which left Show Outline unable to switch back.
+        toolbar.targetComponent = this
 
         val find = JBPanel<JBPanel<*>>(BorderLayout()).apply {
             add(findStatus, BorderLayout.WEST)
