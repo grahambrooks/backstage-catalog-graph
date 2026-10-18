@@ -13,6 +13,7 @@ import com.grahambrooks.backstage.catalog.layout.Direction
 import com.grahambrooks.backstage.catalog.layout.EdgeRouter
 import com.grahambrooks.backstage.catalog.layout.GraphLayout
 import com.grahambrooks.backstage.catalog.layout.Navigation
+import com.grahambrooks.backstage.catalog.layout.Route
 import com.grahambrooks.backstage.catalog.layout.LayeredLayout
 import com.grahambrooks.backstage.catalog.layout.NodeBounds
 import com.intellij.ui.components.JBPanel
@@ -43,7 +44,7 @@ import java.awt.geom.RoundRectangle2D
 import javax.swing.SwingUtilities
 import kotlin.math.atan2
 import kotlin.math.cos
-import kotlin.math.max
+import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.sin
 
@@ -200,6 +201,11 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
     }
 
     fun isGroupingBySystem(): Boolean = groupBySystem
+
+    /** One click of the toolbar's zoom buttons, or one press of + or -. */
+    fun zoomIn() = zoomBy(STEP_ZOOM)
+
+    fun zoomOut() = zoomBy(1 / STEP_ZOOM)
 
     fun zoomBy(factor: Double) {
         zoomAround(factor, Point2D.Double(width / 2.0, height / 2.0))
@@ -411,7 +417,7 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         g2.color = if (node.external) CatalogPalette.externalFill else CatalogPalette.nodeFill
         g2.fill(shape)
 
-        // A tinted band behind the accent bar ties the node to its kind without shouting.
+        // A light wash of the kind's colour over the whole node ties it to its kind without shouting.
         g2.color = CatalogPalette.tintFor(node.kind, if (node.external) 24 else 40)
         g2.fill(RoundRectangle2D.Double(bounds.x, bounds.y, bounds.width, bounds.height, ARC, ARC))
 
@@ -533,11 +539,11 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
      * point, so the edge leaves and enters nodes straight and passes through a row's gap
      * upright. Within a row, a single arc over it, rising further the further apart its ends are.
      */
-    private fun curvesOf(route: com.grahambrooks.backstage.catalog.layout.Route): List<CubicCurve2D.Double> {
+    private fun curvesOf(route: Route): List<CubicCurve2D.Double> {
         val points = route.points
         if (route.sameRow) {
             val (start, end) = points.first() to points.last()
-            val lift = (ARC_LIFT + kotlin.math.abs(end.x - start.x) * 0.12).coerceAtMost(MAX_ARC_LIFT)
+            val lift = (ARC_LIFT + abs(end.x - start.x) * 0.12).coerceAtMost(MAX_ARC_LIFT)
             return listOf(
                 CubicCurve2D.Double(start.x, start.y, start.x, start.y - lift, end.x, end.y - lift, end.x, end.y),
             )
@@ -638,8 +644,8 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
                     event.keyCode == KeyEvent.VK_ENTER ->
                         selected?.let { graph.nodes[it] }?.takeIf { !it.external }?.let { onNavigate?.invoke(it, true) }
                     event.keyCode == KeyEvent.VK_ESCAPE -> select(null)
-                    event.keyChar == '+' || event.keyChar == '=' -> zoomBy(ZOOM_STEP)
-                    event.keyChar == '-' -> zoomBy(1 / ZOOM_STEP)
+                    event.keyChar == '+' || event.keyChar == '=' -> zoomIn()
+                    event.keyChar == '-' -> zoomOut()
                     event.keyChar == '0' -> fitToWindow()
                     else -> return
                 }
@@ -867,7 +873,9 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         const val MAX_ROW_WIDTH = 1200.0
         const val ARROW_LENGTH = 9.0
         const val ARROW_SPREAD = 0.42
+        /** Per wheel notch -- finer than a button press, because notches come in bursts. */
         const val ZOOM_STEP = 1.12
+        const val STEP_ZOOM = 1.2
         // Low enough that Fit to Window can show a catalog of a few dozen entities whole.
         const val MIN_SCALE = 0.1
         const val MAX_SCALE = 3.0

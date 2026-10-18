@@ -38,6 +38,18 @@ declare. "Relations" counts edges, including those to placeholders.
 
 ## What to check
 
+The two editors name their toolbar controls slightly differently; the notes below use the
+JetBrains names.
+
+| JetBrains | VS Code |
+|---|---|
+| Fit to Window | Fit |
+| Show External References | External references |
+| Show Owners as Badges | Owners as badges |
+| Group by System | Group by System |
+| Focus on Selection | Focus |
+| Show Outline | Outline |
+
 **01-minimal** — one solid node, two dashed. Hover the dashed nodes: the tooltip should say
 *Referenced but not defined in this file*. Hover the solid one: it should offer double-click to
 jump to the definition, and doing so should move the caret in the text pane.
@@ -53,7 +65,7 @@ should vanish but a single isolated node; turn it back on and the nine placehold
 `ownedBy`, `partOf`, `parentOf`, `childOf`, `memberOf`, `hasMember`, `providesApi`,
 `consumesApi`, `dependsOn`, `dependencyOf`, `hasPart`. Below that threshold labels are suppressed,
 which is deliberate. `Retail` sits beside `Commerce` with a `partOf` edge into it (`subdomainOf`).
-Turn **Owners as badges** off to see the `ownedBy` edges.
+Turn **Show Owners as Badges** off to see the `ownedBy` edges.
 
 **05-namespaces** — `Checkout (retail)` and `Checkout (wholesale)` must be two nodes, not one.
 Both should have a `consumesApi` edge into the *same* `Checkout API (retail)` node, even though
@@ -65,10 +77,11 @@ The Groups form a hierarchy, so their layer is drawn as one row per depth: paren
 their children, and the `childOf`/`parentOf` edges running vertically, not along a row.
 
 **07-malformed** — a warning strip at the top of the graph pane reading the first problem and
-`(+3 more)`; hovering it lists all four. Two solid nodes remain. The surviving `duplicated`
+`(+3 more)`; clicking it lists all four, and picking one moves the caret to that document. Two
+solid nodes remain. The surviving `duplicated`
 node should be titled **Second definition** — the later declaration wins.
 
-**08-large-catalog** — **Fit** should bring all 37 entities into view. Ctrl/Cmd-scroll
+**08-large-catalog** — **Fit to Window** should bring all 37 entities into view. Ctrl/Cmd-scroll
 zooms about the cursor, plain scroll pans vertically, Shift-scroll horizontally, and dragging
 pans. Click a node: everything outside its neighbourhood should dim.
 

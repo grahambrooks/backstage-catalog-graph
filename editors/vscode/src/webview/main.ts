@@ -62,7 +62,10 @@ const CLUSTER_ARC = 18;
 const MAX_ROW_WIDTH = 1200;
 const ARROW_LENGTH = 9;
 const ARROW_SPREAD = 0.42;
+/** Per wheel notch -- finer than a button press, because notches come in bursts. */
 const ZOOM_STEP = 1.12;
+/** One click of the toolbar's zoom buttons, or one press of + or -. */
+const STEP_ZOOM = 1.2;
 // Low enough that Fit to Window can show a catalog of a few dozen entities whole.
 const MIN_SCALE = 0.1;
 const MAX_SCALE = 3;
@@ -175,8 +178,8 @@ function renderOutlineIfShowing(): void {
 
 // --- Toolbar ------------------------------------------------------------------------------
 
-byId('zoom-in').addEventListener('click', () => zoomAround(ZOOM_STEP * 1.08, centreOfView()));
-byId('zoom-out').addEventListener('click', () => zoomAround(1 / (ZOOM_STEP * 1.08), centreOfView()));
+byId('zoom-in').addEventListener('click', () => zoomAround(STEP_ZOOM, centreOfView()));
+byId('zoom-out').addEventListener('click', () => zoomAround(1 / (STEP_ZOOM), centreOfView()));
 byId('fit').addEventListener('click', () => fitToWindow());
 byId('actual').addEventListener('click', () => {
   viewport.scale = 1;
@@ -1027,9 +1030,9 @@ canvas.addEventListener('keydown', (event: KeyboardEvent) => {
   } else if (event.key === 'Escape') {
     select(undefined);
   } else if (event.key === '+' || event.key === '=') {
-    zoomAround(ZOOM_STEP * 1.08, centreOfView());
+    zoomAround(STEP_ZOOM, centreOfView());
   } else if (event.key === '-') {
-    zoomAround(1 / (ZOOM_STEP * 1.08), centreOfView());
+    zoomAround(1 / (STEP_ZOOM), centreOfView());
   } else if (event.key === '0') {
     fitToWindow();
   } else {

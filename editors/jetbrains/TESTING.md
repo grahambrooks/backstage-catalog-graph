@@ -39,7 +39,7 @@ The editor should split: your YAML on the left, a **Backstage Catalog** graph on
 should see one solid node (`Storefront Web`) and two dashed ones (`storefront-team`,
 `storefront`) — the dashed nodes are entities this file refers to but does not declare.
 
-Then work through [`examples/README.md`](examples/README.md). It lists ten scenarios, the exact
+Then work through [`examples/README.md`](examples/README.md). It lists eleven scenarios, the exact
 entity, placeholder, relation and problem counts each should produce, and what to check in each.
 Ignore the `./gradlew runIde` line at the top of that file — that is for building from source;
 you have the plugin already.

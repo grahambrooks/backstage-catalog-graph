@@ -45,6 +45,10 @@ in step between editors. The VS Code extension also carries
   in a background read action instead of on the UI thread. A focus move keeps the zoom when the
   neighbourhood fits.
 - Conformance runners read the layout's logical layers rather than grouping nodes by position.
+- CI: every action pinned to a commit SHA and moved to its current major (`gradle/actions` stays
+  on v5 — v6 changes its licence terms); every workflow's token is read-only except the release;
+  release notes come from this file; a new workflow runs actionlint. A `renovate.json` keeps
+  actions pinned and holds `@types/vscode` and `@types/node` to the oldest supported VS Code.
 - **Contract:** `dependsOn` and `dependencyOf` on anything but an `AiResource` no longer assume
   `Component`. As in Backstage, a reference there must name its kind; a bare name is reported as
   a problem and draws no edge. Fields are now scoped by kind, so `skills`/`plugins` mean nothing

@@ -135,9 +135,10 @@ Layout must terminate on cyclic and self-referencing graphs, and must place ever
 
 This part is presentation, not contract: nothing below is in the golden files.
 
-A layer can hold its own hierarchy -- Groups joined by `parent`/`children`, Components by
-`subcomponentOf`, `AiResource` plugins and marketplaces by `skills`/`plugins`. Drawn as one row, those edges run sideways through their siblings. So after
-ordering, a layer is drawn as one row per hierarchy depth, parents above children:
+A layer can hold its own hierarchy — Groups joined by `parent`/`children`, Components by
+`subcomponentOf`, `AiResource` plugins and marketplaces by `skills`/`plugins`. Drawn as one row,
+those edges run sideways through their siblings. So after ordering, a layer is drawn as one row
+per hierarchy depth, parents above children:
 
 - A node's parents are the far ends of its `childOf` and `partOf` edges, and the near end of a
   `parentOf` or `hasPart` edge, counting only parents in the same layer.

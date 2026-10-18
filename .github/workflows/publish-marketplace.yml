@@ -1,5 +1,7 @@
 # Publishing to either marketplace is irreversible -- a published version cannot be withdrawn,
 # only superseded. Both are therefore kept off the tag path and run by hand.
+#
+# Deferred: the project is not public yet (see ROADMAP.md). Do not run this until it is.
 name: Publish to marketplaces
 
 on:
@@ -18,20 +20,24 @@ on:
         type: choice
         options: [eap, stable]
 
+# The marketplace tokens come from the environment's secrets, not from the GitHub token.
+permissions:
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
     environment: marketplaces
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         if: inputs.target == 'jetbrains'
         with:
           distribution: temurin
           java-version: 21
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
         if: inputs.target == 'jetbrains'
 
       - name: Publish to the JetBrains Marketplace
@@ -44,7 +50,7 @@ jobs:
           PRIVATE_KEY_PASSWORD: ${{ secrets.PLUGIN_PRIVATE_KEY_PASSWORD }}
         run: ./gradlew publishPlugin -Pchannel=${{ inputs.channel }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         if: inputs.target == 'vscode'
         with:
           node-version: 22

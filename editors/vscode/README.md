@@ -136,7 +136,7 @@ The same VSIX installs in Cursor, Windsurf and VSCodium — substitute `cursor`,
 
 ### What to check
 
-[`examples/README.md`](../../examples/README.md) is the test plan: ten scenarios, each with the
+[`examples/README.md`](../../examples/README.md) is the test plan: eleven scenarios, each with the
 exact entity, placeholder, relation and problem counts it should produce, and the interactions
 to try in each. The counts are asserted by the automated tests, so if what you see on screen
 disagrees with what is written there, the bug is in the plugin and not in the example.

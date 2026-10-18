@@ -23,6 +23,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
+import java.awt.BasicStroke
 import java.awt.BorderLayout
 import java.awt.CardLayout
 import java.awt.Cursor
@@ -37,6 +38,7 @@ import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
+import javax.swing.Icon
 import javax.swing.event.DocumentEvent
 
 /**
@@ -269,8 +271,8 @@ class CatalogGraphView(
     }
 
     private fun buildActions(): DefaultActionGroup = DefaultActionGroup().apply {
-        add(simpleAction("Zoom In", AllIcons.General.ZoomIn) { canvas.zoomBy(1.2) })
-        add(simpleAction("Zoom Out", AllIcons.General.ZoomOut) { canvas.zoomBy(1 / 1.2) })
+        add(simpleAction("Zoom In", AllIcons.General.ZoomIn) { canvas.zoomIn() })
+        add(simpleAction("Zoom Out", AllIcons.General.ZoomOut) { canvas.zoomOut() })
         add(simpleAction("Fit to Window", AllIcons.General.FitContent) { canvas.fitToWindow() })
         add(simpleAction("Actual Size", AllIcons.General.ActualZoom) { canvas.resetZoom() })
         add(Separator.getInstance())
@@ -313,7 +315,7 @@ class CatalogGraphView(
         add(simpleAction("Reload Graph", AllIcons.Actions.Refresh) { onRefresh() })
     }
 
-    private fun simpleAction(text: String, icon: javax.swing.Icon, run: () -> Unit): AnAction =
+    private fun simpleAction(text: String, icon: Icon, run: () -> Unit): AnAction =
         object : AnAction(text, text, icon) {
             override fun getActionUpdateThread() = ActionUpdateThread.EDT
             override fun actionPerformed(event: AnActionEvent) = run()
@@ -368,7 +370,7 @@ class CatalogGraphView(
                     g2.drawLine(x, height / 2 - 6, x, height / 2 + 6)
                     x += 14
                 }
-                g2.stroke = java.awt.BasicStroke(2f)
+                g2.stroke = BasicStroke(2f)
                 for (relation in relations) {
                     g2.color = CatalogPalette.relationColour(relation)
                     g2.drawLine(x, height / 2, x + 12, height / 2)

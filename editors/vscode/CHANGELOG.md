@@ -22,9 +22,9 @@ Versions are CalVer (`YYYY.M.D`) and are kept in step with the JetBrains plugin.
   nodes; very wide rows wrap; zoom out to 10%.
 - Faster focus moves and redraws on large files, and a focus move keeps the zoom when the
   neighbourhood fits.
-
-- A bare `dependsOn`/`dependencyOf` reference on a Component or Resource is now reported as
-  needing a kind, as Backstage requires, instead of being assumed to be a Component.
+- A bare `dependsOn` reference is now reported as needing a kind, as Backstage requires,
+  instead of being assumed to be a Component — on every kind except `AiResource`, where it means
+  another `AiResource`. A bare `dependencyOf` reference always needs a kind.
 
 ### Fixed
 

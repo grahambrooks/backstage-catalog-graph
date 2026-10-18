@@ -1,0 +1,26 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "packageRules": [
+    {
+      "description": "One update for all workflow actions, kept pinned to commit SHAs.",
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions"
+    },
+    {
+      "description": "gradle/actions v6 moves caching into a proprietary component under separate terms of use. Staying on v5 until that is a deliberate decision.",
+      "matchPackageNames": ["gradle/actions"],
+      "allowedVersions": "<6"
+    },
+    {
+      "description": "@types/vscode must match the oldest VS Code in engines.vscode, or typecheck accepts APIs that fail at runtime there. Raise both together, by hand.",
+      "matchPackageNames": ["@types/vscode"],
+      "enabled": false
+    },
+    {
+      "description": "@types/node follows the Node that the oldest supported VS Code ships (Node 20 for 1.90), not the newest Node.",
+      "matchPackageNames": ["@types/node"],
+      "allowedVersions": "<21"
+    }
+  ]
+}

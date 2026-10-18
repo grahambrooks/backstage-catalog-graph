@@ -98,16 +98,15 @@
     "bundle:production": "node esbuild.mjs --production",
     "watch": "node esbuild.mjs --watch",
     "test": "npm run compile && node --test \"out-test/test/**/*.test.js\"",
-    "lint": "tsc --project tsconfig.json --noEmit",
-    "package": "npm run bundle:production && vsce package --out backstage-catalog-graph-$npm_package_version.vsix",
+    "package": "vsce package --out backstage-catalog-graph-$npm_package_version.vsix",
     "vscode:prepublish": "npm run bundle:production"
   },
   "dependencies": {
     "yaml": "^2.6.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "@types/vscode": "^1.90.0",
+    "@types/node": "^20.19.43",
+    "@types/vscode": "1.90.0",
     "@vscode/vsce": "^3.2.0",
     "esbuild": "^0.28.0",
     "typescript": "^5.6.0"

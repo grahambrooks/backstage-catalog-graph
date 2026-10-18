@@ -24,7 +24,7 @@ PLUGIN_ZIP := $(JETBRAINS)/build/distributions/backstage-catalog-graph-$(JETBRAI
 
 .PHONY: help build test package clean \
         jetbrains-build jetbrains-test jetbrains-package jetbrains-testkit run-jetbrains verify-jetbrains \
-        vscode-build vscode-test vscode-package run-vscode run-vscode-package
+        vscode-build vscode-test vscode-package run-vscode run-vscode-package clean-dist
 
 help: ## List the targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -37,9 +37,13 @@ build: jetbrains-build vscode-build ## Compile and test both editors
 
 test: jetbrains-test vscode-test ## Run both test suites, conformance corpus included
 
-package: jetbrains-package vscode-package ## Build both installable packages into dist/
+package: clean-dist jetbrains-package vscode-package ## Build both installable packages into dist/
 	@echo
 	@ls -1 $(DIST)
+
+# Packages are named by version, so earlier ones would otherwise pile up next to the new ones.
+clean-dist:
+	rm -rf $(DIST)
 
 clean: ## Remove build output and packages
 	$(GRADLE) clean
@@ -90,6 +94,7 @@ vscode-test: $(VSCODE)/node_modules ## Run the VS Code tests
 	cd $(VSCODE) && npm test
 
 vscode-package: $(VSCODE)/node_modules ## Build the VS Code .vsix into dist/
+	$(if $(VERSION),,$(error Could not read the version from $(VSCODE)/package.json -- is Node installed?))
 	cd $(VSCODE) && npm run package
 	@mkdir -p $(DIST)
 	cp $(VSIX) $(DIST)/
