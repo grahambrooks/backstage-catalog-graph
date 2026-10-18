@@ -1,0 +1,42 @@
+examples/README.md
+  s_ccff39c7afa1ba::t_e87c04b4c132fc 62-63
+CLAUDE.md
+  s_ccff39c7afa1ba::t_6d9f983e6f58fd 60,74
+conformance/spec.md
+  s_ccff39c7afa1ba::t_6d9f983e6f58fd 117-134,153-155
+editors/vscode/src/webview/main.ts
+  s_ccff39c7afa1ba::t_e1d414dd01dd16 78
+editors/vscode/src/test/core.test.ts
+  s_ccff39c7afa1ba::t_e1d414dd01dd16 8,218-255
+  s_ccff39c7afa1ba::t_e2958137395543 256
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/layout/GraphLayout.kt
+  s_ccff39c7afa1ba::t_31b39dcf2b3485 28-33
+editors/jetbrains/src/test/kotlin/com/grahambrooks/backstage/catalog/conformance/ConformanceFormat.kt
+  s_ccff39c7afa1ba::t_31b39dcf2b3485 84-88,92
+editors/vscode/src/test/conformance.test.ts
+  s_ccff39c7afa1ba::t_e1d414dd01dd16 72-76,85
+  s_ccff39c7afa1ba::t_c6f85c4984d1b9 7
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/layout/LayeredLayout.kt
+  s_ccff39c7afa1ba::t_31b39dcf2b3485 6,18-22,30,40,95-142,148-162,176
+editors/vscode/src/core/layeredLayout.ts
+  s_ccff39c7afa1ba::t_e1d414dd01dd16 17-22,25,35,73-77,92,96,102-116,132,136-202
+  s_ccff39c7afa1ba::t_b414f52c38f494 203-204
+editors/jetbrains/src/test/kotlin/com/grahambrooks/backstage/catalog/layout/LayeredLayoutTest.kt
+  s_ccff39c7afa1ba::t_80e454d80f8e21 4,7,9-10,77-117
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "816ba653a73d26d59cc64b45a30548724d005fd5",
+  "prompts": {},
+  "sessions": {
+    "s_ccff39c7afa1ba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "077998fa-6922-450c-91cb-7db0d67c3e3c",
+        "model": "unknown"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
