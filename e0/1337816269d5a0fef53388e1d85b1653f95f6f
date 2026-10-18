@@ -1,0 +1,49 @@
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphFileEditor.kt
+  s_ccff39c7afa1ba::t_bd997139408373 52-61,79-85,142,144-147,151-155
+  s_ccff39c7afa1ba::t_19745a8233d302 156-157
+CLAUDE.md
+  s_ccff39c7afa1ba::t_1c02bc91f804d8 13,65,79
+conformance/expected/case-unlinked-ordering.json
+  s_ccff39c7afa1ba::t_af4b59227d3ca1 1-23
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/layout/LayeredLayout.kt
+  s_ccff39c7afa1ba::t_869b8e808532a8 87-94
+conformance/manifest.json
+  s_ccff39c7afa1ba::t_af4b59227d3ca1 102-106
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphPanel.kt
+  s_ccff39c7afa1ba::t_bd997139408373 136-138,156
+  s_ccff39c7afa1ba::t_dc501feeccacbd 747-748
+  s_ccff39c7afa1ba::t_6c872297ea64ba 157
+editors/vscode/src/graphPanel.ts
+  s_ccff39c7afa1ba::t_7cf505c7aaa58c 27-36,85-90,114,117,127-128,139-142,165,172-176
+  s_ccff39c7afa1ba::t_0d1cdf84e18a4a 116
+editors/vscode/src/extension.ts
+  s_ccff39c7afa1ba::t_0d1cdf84e18a4a 12-15,17-18,30,32,34-39,43,45,50
+CHANGELOG.md
+  s_ccff39c7afa1ba::t_1c02bc91f804d8 55-64
+editors/vscode/CHANGELOG.md
+  s_ccff39c7afa1ba::t_1c02bc91f804d8 31-35
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphView.kt
+  s_ccff39c7afa1ba::t_bd997139408373 198-206,227,229,297-300
+  s_ccff39c7afa1ba::t_dc501feeccacbd 334-346,354
+  s_ccff39c7afa1ba::t_028570973f161e 332-333
+editors/vscode/src/webview/main.ts
+  s_ccff39c7afa1ba::t_86a4662776efef 150-152,155,161-173,194,263-274
+conformance/cases/unlinked-ordering.yaml
+  s_ccff39c7afa1ba::t_af4b59227d3ca1 1-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e01337816269d5a0fef53388e1d85b1653f95f6f",
+  "prompts": {},
+  "sessions": {
+    "s_ccff39c7afa1ba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "077998fa-6922-450c-91cb-7db0d67c3e3c",
+        "model": "unknown"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
