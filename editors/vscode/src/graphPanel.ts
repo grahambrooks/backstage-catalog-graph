@@ -67,6 +67,17 @@ export class CatalogGraphPanel {
         }
       }),
 
+      // Follow the caret: the webview selects the entity whose YAML the caret is in.
+      vscode.window.onDidChangeTextEditorSelection((event) => {
+        if (event.textEditor.document.uri.toString() !== this.document.uri.toString()) {
+          return;
+        }
+        void this.panel.webview.postMessage({
+          command: 'caret',
+          offset: this.document.offsetAt(event.selections[0].active),
+        });
+      }),
+
       vscode.workspace.onDidCloseTextDocument((closed) => {
         if (closed.uri.toString() === this.document.uri.toString()) {
           this.panel.dispose();
@@ -89,23 +100,29 @@ export class CatalogGraphPanel {
       return;
     }
     if (message.command === 'navigate' && typeof message.offset === 'number') {
-      void this.revealAt(message.offset);
+      void this.revealAt(message.offset, typeof message.end === 'number' ? message.end : undefined);
     }
     if (message.command === 'reload') {
       this.scheduleRebuild(0);
     }
   }
 
-  /** Puts the caret on the entity's declaration, in the editor column the graph came from. */
-  private async revealAt(offset: number): Promise<void> {
-    const position = this.document.positionAt(
-      Math.max(0, Math.min(offset, this.document.getText().length)),
-    );
+  /**
+   * Selects the YAML that defines the entity, in the editor column the graph came from. The
+   * caret goes at the top of the selection, so it still sits inside that entity and the graph
+   * keeps it selected. Without an end, only the caret moves.
+   */
+  private async revealAt(offset: number, end?: number): Promise<void> {
+    const length = this.document.getText().length;
+    const clamp = (value: number) => Math.max(0, Math.min(value, length));
+    const position = this.document.positionAt(clamp(offset));
+    const last = this.document.positionAt(clamp(end ?? offset));
     const editor = await vscode.window.showTextDocument(this.document, {
       viewColumn: vscode.ViewColumn.One,
       preserveFocus: false,
     });
-    editor.selection = new vscode.Selection(position, position);
+    // Anchor at the end and the active end at the start: the caret is the active end.
+    editor.selection = new vscode.Selection(last, position);
     editor.revealRange(
       new vscode.Range(position, position),
       vscode.TextEditorRevealType.InCenterIfOutsideViewport,
@@ -183,6 +200,8 @@ export class CatalogGraphPanel {
     <span class="separator"></span>
     <button id="reload" title="Reload graph">Reload</button>
     <span id="problems" hidden></span>
+    <span id="find-status"></span>
+    <input type="search" id="find" placeholder="Find entity" title="Enter for next match, Shift+Enter for previous, Escape to clear" size="14">
   </header>
   <main id="canvas"><svg id="graph" xmlns="http://www.w3.org/2000/svg"></svg></main>
   <footer id="status-bar">
@@ -260,6 +279,13 @@ const STYLES = `
   #toolbar button:hover { background: var(--vscode-button-secondaryHoverBackground, var(--node-border)); }
   #toolbar label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
   .separator { width: 1px; height: 16px; background: var(--node-border); }
+  #find {
+    background: var(--vscode-input-background); color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border, var(--node-border)); border-radius: 2px;
+    padding: 2px 6px; font-family: inherit; font-size: inherit;
+  }
+  #find:focus { outline: 1px solid var(--accent); outline-offset: -1px; }
+  #find-status { color: var(--vscode-descriptionForeground); margin-left: auto; }
   #problems {
     color: var(--vscode-editorWarning-foreground, #cca700);
     margin-left: auto; cursor: help;

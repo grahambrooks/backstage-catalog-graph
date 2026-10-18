@@ -4,13 +4,18 @@ import com.grahambrooks.backstage.catalog.model.CatalogGraph
 import com.grahambrooks.backstage.catalog.model.CatalogGraphBuilder
 import com.grahambrooks.backstage.catalog.model.CatalogNode
 import com.grahambrooks.backstage.catalog.model.CatalogProblem
+import com.grahambrooks.backstage.catalog.model.EntityRef
 import com.grahambrooks.backstage.catalog.psi.YamlDocumentReader
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Document
+import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.editor.event.CaretEvent
+import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditor
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorState
 import com.intellij.openapi.fileEditor.FileEditorStateLevel
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
@@ -39,6 +44,10 @@ class CatalogGraphFileEditor(
     private val view = CatalogGraphView(onRefresh = { rebuild(preserveViewport = false) })
     private val alarm = Alarm(Alarm.ThreadToUse.SWING_THREAD, this)
     private var built = false
+    private var graph: CatalogGraph = CatalogGraph.EMPTY
+
+    /** The entity under the caret when it last moved, so only a move into another entity reacts. */
+    private var caretEntity: EntityRef? = null
 
     init {
         view.canvas.onNavigate = ::navigateTo
@@ -46,6 +55,22 @@ class CatalogGraphFileEditor(
         document()?.addDocumentListener(
             object : DocumentListener {
                 override fun documentChanged(event: DocumentEvent) = scheduleRebuild()
+            },
+            this,
+        )
+
+        // Follow the caret: moving into another entity's YAML selects it in the graph, panning
+        // to it if needed but keeping the user's zoom. This reads the graph already built, so
+        // it never touches PSI -- a caret event is no place to force a commit.
+        EditorFactory.getInstance().eventMulticaster.addCaretListener(
+            object : CaretListener {
+                override fun caretPositionChanged(event: CaretEvent) {
+                    if (event.editor.document != document()) return
+                    val ref = graph.entityAt(event.editor.caretModel.offset)?.ref
+                    if (ref == caretEntity) return
+                    caretEntity = ref
+                    if (ref != null) view.canvas.reveal(ref, zoomToRead = false)
+                }
             },
             this,
         )
@@ -100,6 +125,7 @@ class CatalogGraphFileEditor(
             if (project.isDisposed || !file.isValid) return@performWhenAllCommitted
             val graph = ReadAction.compute<CatalogGraph, RuntimeException> { readGraph() }
             built = true
+            this.graph = graph
             view.show(graph, preserveViewport)
         }
     }
@@ -117,9 +143,18 @@ class CatalogGraphFileEditor(
         return CatalogGraphBuilder.build(YamlDocumentReader.read(psiFile))
     }
 
+    /**
+     * Selects the YAML that defines [node], with the caret at its top so the caret still sits
+     * inside that entity and the graph keeps it selected. Falls back to placing the caret at the
+     * document when there is no definition range.
+     */
     private fun navigateTo(node: CatalogNode) {
-        val offset = node.sourceOffset ?: return
-        OpenFileDescriptor(project, file, offset).navigate(true)
+        val definition = node.definition
+        val offset = definition?.start ?: node.sourceOffset ?: return
+        val editor = FileEditorManager.getInstance(project)
+            .openTextEditor(OpenFileDescriptor(project, file, offset), true) ?: return
+        // The descriptor has already put the caret at the start; selecting leaves it there.
+        definition?.let { editor.selectionModel.setSelection(it.start, it.end) }
     }
 
     private companion object {

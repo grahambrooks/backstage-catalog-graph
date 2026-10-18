@@ -1,5 +1,6 @@
 import { EntityKind } from './entityKind';
 import { EntityRef, formatRef } from './entityRef';
+import { TextSpan } from './rawDocument';
 import { RelationType } from './relationType';
 
 /**
@@ -23,6 +24,8 @@ export interface CatalogNode {
   readonly external: boolean;
   /** Character offset of the entity's YAML document, or undefined for external nodes. */
   readonly sourceOffset?: number;
+  /** The YAML that defines the entity, selected when navigating to it. */
+  readonly definition?: TextSpan;
 }
 
 /** A directed relation between two nodes, as written in the source entity's `spec`. */
@@ -86,6 +89,24 @@ export function neighbourhoodOf(graph: CatalogGraph, ref: string): Set<string> {
     }
   }
   return neighbourhood;
+}
+
+/**
+ * The declared entity whose YAML document contains `offset`: the last one starting at or before
+ * it. Offsets before the first document, and files with no declared entity, give undefined.
+ */
+export function entityAt(graph: CatalogGraph, offset: number): CatalogNode | undefined {
+  let best: CatalogNode | undefined;
+  for (const node of graph.nodes.values()) {
+    const start = node.sourceOffset;
+    if (node.external || start === undefined || start > offset) {
+      continue;
+    }
+    if (best === undefined || start > best.sourceOffset!) {
+      best = node;
+    }
+  }
+  return best;
 }
 
 export function keyOf(ref: EntityRef): string {

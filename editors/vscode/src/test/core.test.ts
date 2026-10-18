@@ -3,7 +3,7 @@ import { describe, test } from 'node:test';
 
 import { isCatalogFileName, matchesBaseName } from '../core/catalogFiles';
 import { buildCatalogGraph } from '../core/catalogGraphBuilder';
-import { declaredNodes, externalNodes, keyOf } from '../core/catalogGraph';
+import { declaredNodes, entityAt, externalNodes, keyOf } from '../core/catalogGraph';
 import { formatRef, parseRef, shortLabel } from '../core/entityRef';
 import { layoutGraph } from '../core/layeredLayout';
 import { foldOwners } from '../core/ownerBadges';
@@ -88,6 +88,29 @@ describe('source offsets', () => {
     ok(documents[1].offset > 0, 'the second document should not start at zero');
     ok(text.slice(documents[1].offset).startsWith('---'));
     ok(text.slice(documents[1].offset).includes('name: second'));
+  });
+
+  test("each entity's definition is its mapping, without the separator", () => {
+    const graph = buildCatalogGraph(readDocuments(text));
+    const second = declaredNodes(graph).find((node) => node.title === 'second')!;
+    const definition = text.slice(second.definition!.start, second.definition!.end);
+    ok(definition.startsWith('apiVersion:'), definition);
+    ok(definition.trimEnd().endsWith('name: second'), definition);
+    ok(!definition.includes('---'));
+    // The caret lands at the top of the selection, which must map back to the same entity.
+    equal(entityAt(graph, second.definition!.start)?.title, 'second');
+  });
+
+  test('a caret offset maps to the entity whose document contains it', () => {
+    const graph = buildCatalogGraph(readDocuments(text));
+    equal(entityAt(graph, 0)?.title, 'first');
+    equal(entityAt(graph, text.indexOf('name: first'))?.title, 'first');
+    equal(entityAt(graph, text.indexOf('name: second'))?.title, 'second');
+    equal(entityAt(graph, text.length)?.title, 'second');
+  });
+
+  test('a file with no declared entity maps no offset', () => {
+    equal(entityAt(buildCatalogGraph(readDocuments('# just a comment\n')), 0), undefined);
   });
 
   test('declared nodes carry an offset and placeholders do not', () => {

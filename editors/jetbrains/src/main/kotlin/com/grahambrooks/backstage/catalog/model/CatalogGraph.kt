@@ -24,6 +24,8 @@ data class CatalogNode(
     val external: Boolean = false,
     /** Character offset of the entity's YAML document, or `null` for [external] nodes. */
     val sourceOffset: Int? = null,
+    /** The YAML that defines the entity, selected when navigating to it; see [RawDocument.definition]. */
+    val definition: TextSpan? = null,
 )
 
 /** A directed relation between two nodes, as written in the source entity's `spec`. */
@@ -64,6 +66,16 @@ data class CatalogGraph(
             .flatMap { sequenceOf(it.from, it.to) }
             .toMutableSet()
             .apply { add(ref) }
+
+    /**
+     * The declared entity whose YAML document contains [offset]: the last one starting at or
+     * before it. Offsets before the first document, and files with no declared entity, give null.
+     * Documents are read in order, so starts ascend and the last start wins.
+     */
+    fun entityAt(offset: Int): CatalogNode? =
+        declaredNodes
+            .filter { (it.sourceOffset ?: Int.MAX_VALUE) <= offset }
+            .maxByOrNull { it.sourceOffset ?: Int.MIN_VALUE }
 
     companion object {
         val EMPTY = CatalogGraph(emptyMap(), emptyList())

@@ -130,4 +130,14 @@ class CatalogGraphBuilderProblemTest {
     fun `a duplicate declaration produces one node, not two`() {
         assertEquals(1, graph.declaredNodes.count { it.ref.name == "duplicated" })
     }
+
+    @Test
+    fun `a caret offset maps to the entity whose document contains it`() {
+        // Fixture offsets are document indices, so they ascend in declaration order.
+        val declared = graph.declaredNodes.sortedBy { it.sourceOffset }
+        val first = requireNotNull(declared.first().sourceOffset)
+        assertEquals(declared.first(), graph.entityAt(first))
+        assertEquals(declared.last(), graph.entityAt(Int.MAX_VALUE))
+        assertEquals(null, graph.entityAt(first - 1))
+    }
 }

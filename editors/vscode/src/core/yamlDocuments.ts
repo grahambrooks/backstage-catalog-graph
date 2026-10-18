@@ -22,7 +22,13 @@ export function readDocuments(text: string): RawDocument[] {
     if (!isPlainObject(data)) {
       continue;
     }
-    documents.push({ data, offset: document.range?.[0] ?? 0 });
+    // A node's range is [start, valueEnd, nodeEnd]; valueEnd stops before trailing comments.
+    const range = document.contents?.range;
+    documents.push({
+      data,
+      offset: document.range?.[0] ?? 0,
+      definition: range ? { start: range[0], end: range[1] } : undefined,
+    });
   }
 
   return documents;

@@ -3,6 +3,7 @@ package com.grahambrooks.backstage.catalog.ui
 import com.grahambrooks.backstage.catalog.model.CatalogGraph
 import com.grahambrooks.backstage.catalog.model.CatalogNode
 import com.grahambrooks.backstage.catalog.model.EntityKind
+import com.grahambrooks.backstage.catalog.model.EntityRef
 import com.grahambrooks.backstage.catalog.model.RelationType
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -12,6 +13,9 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.CommonShortcuts
+import com.intellij.ui.DocumentAdapter
+import com.intellij.ui.SearchTextField
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
@@ -23,7 +27,10 @@ import java.awt.Font
 import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.RenderingHints
+import java.awt.event.KeyAdapter
+import java.awt.event.KeyEvent
 import javax.swing.BorderFactory
+import javax.swing.event.DocumentEvent
 
 /**
  * The whole graph tab: toolbar, canvas, a legend, and a strip that surfaces anything the
@@ -48,14 +55,34 @@ class CatalogGraphView(
 
     private val legend = LegendStrip()
 
+    private val findField = SearchTextField(false).apply {
+        textEditor.emptyText.text = "Find entity"
+        textEditor.columns = 14
+    }
+
+    private val findStatus = JBLabel().apply {
+        border = JBUI.Borders.empty(0, 6)
+        foreground = CatalogPalette.subtitle
+    }
+
+    private var matches: List<EntityRef> = emptyList()
+    private var matchIndex = 0
+
     init {
         val toolbar = ActionManager.getInstance()
             .createActionToolbar(TOOLBAR_PLACE, buildActions(), true)
         toolbar.targetComponent = canvas
 
+        val find = JBPanel<JBPanel<*>>(BorderLayout()).apply {
+            add(findStatus, BorderLayout.WEST)
+            add(findField, BorderLayout.CENTER)
+            border = JBUI.Borders.empty(2, 4)
+        }
+
         val header = JBPanel<JBPanel<*>>(BorderLayout()).apply {
             add(toolbar.component, BorderLayout.WEST)
             add(problemsLabel, BorderLayout.CENTER)
+            add(find, BorderLayout.EAST)
             border = JBUI.Borders.customLineBottom(CatalogPalette.nodeBorder)
         }
 
@@ -68,6 +95,59 @@ class CatalogGraphView(
         add(header, BorderLayout.NORTH)
         add(canvas, BorderLayout.CENTER)
         add(footer, BorderLayout.SOUTH)
+
+        installFind()
+    }
+
+    /**
+     * Typing selects and reveals the first match; Enter and Shift+Enter step through the rest,
+     * and Escape clears the field and hands focus back to the graph. Ctrl/Cmd+F on the graph
+     * jumps here.
+     */
+    private fun installFind() {
+        findField.addDocumentListener(object : DocumentAdapter() {
+            override fun textChanged(event: DocumentEvent) = runFind(restart = true)
+        })
+        findField.textEditor.addKeyListener(object : KeyAdapter() {
+            override fun keyPressed(event: KeyEvent) {
+                when (event.keyCode) {
+                    KeyEvent.VK_ENTER -> {
+                        step(if (event.isShiftDown) -1 else 1)
+                        event.consume()
+                    }
+                    KeyEvent.VK_ESCAPE -> {
+                        findField.text = ""
+                        canvas.requestFocusInWindow()
+                        event.consume()
+                    }
+                }
+            }
+        })
+        object : AnAction() {
+            override fun getActionUpdateThread() = ActionUpdateThread.EDT
+            override fun actionPerformed(event: AnActionEvent) {
+                findField.requestFocusInWindow()
+                findField.selectText()
+            }
+        }.registerCustomShortcutSet(CommonShortcuts.getFind(), this)
+    }
+
+    private fun runFind(restart: Boolean) {
+        matches = canvas.matching(findField.text)
+        if (restart) matchIndex = 0
+        matchIndex = matchIndex.coerceIn(0, (matches.size - 1).coerceAtLeast(0))
+        matches.getOrNull(matchIndex)?.let { canvas.reveal(it, zoomToRead = true) }
+        findStatus.text = when {
+            findField.text.isBlank() -> ""
+            matches.isEmpty() -> "No matches"
+            else -> "${matchIndex + 1} of ${matches.size}"
+        }
+    }
+
+    private fun step(direction: Int) {
+        if (matches.isEmpty()) return
+        matchIndex = (matchIndex + direction).mod(matches.size)
+        runFind(restart = false)
     }
 
     fun show(graph: CatalogGraph, preserveViewport: Boolean) {
@@ -128,6 +208,7 @@ class CatalogGraphView(
             override fun setSelected(event: AnActionEvent, state: Boolean) {
                 canvas.setShowExternal(state)
                 updateLegend()
+                runFind(restart = false)
             }
         })
         add(object : ToggleAction("Show Owners as Badges", OWNER_TOGGLE_HINT, AllIcons.Nodes.Tag) {
@@ -136,6 +217,7 @@ class CatalogGraphView(
             override fun setSelected(event: AnActionEvent, state: Boolean) {
                 canvas.setOwnersAsBadges(state)
                 updateLegend()
+                runFind(restart = false)
             }
         })
         add(Separator.getInstance())

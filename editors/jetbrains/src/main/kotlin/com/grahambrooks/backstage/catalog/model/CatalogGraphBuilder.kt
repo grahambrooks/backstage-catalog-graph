@@ -112,6 +112,7 @@ object CatalogGraphBuilder {
             tags = metadata?.stringsAt("tags").orEmpty(),
             external = false,
             sourceOffset = document.offset,
+            definition = document.definition,
         )
     }
 

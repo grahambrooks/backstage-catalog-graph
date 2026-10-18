@@ -49,8 +49,10 @@ you have the plugin already.
 | | |
 |---|---|
 | Click a node | Select it and dim everything outside its neighbourhood |
-| Double-click a node | Jump the caret to that entity's declaration in the YAML |
+| Double-click a node | Select the YAML that defines that entity, caret at its top |
 | Hover a node | Details, and whether it is declared here or elsewhere |
+| Move the caret into an entity's YAML | Select it in the graph, panning to it if it is off screen (zoom is kept) |
+| Type in **Find entity** (Ctrl/Cmd+F) | Select and reveal the first entity whose title or reference matches; Enter / Shift+Enter for next / previous, Escape to clear |
 | Ctrl/Cmd + scroll | Zoom about the cursor |
 | Scroll / Shift + scroll | Pan vertically / horizontally |
 | Drag | Pan |

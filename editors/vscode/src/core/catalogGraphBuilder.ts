@@ -131,6 +131,7 @@ function nodeOf(document: RawDocument, ref: EntityRef): CatalogNode {
     tags: metadata ? stringsAt(metadata, 'tags') : [],
     external: false,
     sourceOffset: document.offset,
+    definition: document.definition,
   };
 }
 

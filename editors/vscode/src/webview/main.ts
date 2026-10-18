@@ -2,6 +2,7 @@ import {
   CatalogGraph,
   CatalogNode,
   declaredNodes,
+  entityAt,
   externalNodes,
   isDangling,
   isEmpty,
@@ -73,6 +74,8 @@ const legendLabel = document.getElementById('legend') as HTMLElement;
 const problemsLabel = document.getElementById('problems') as HTMLElement;
 const externalCheckbox = document.getElementById('external') as HTMLInputElement;
 const ownersCheckbox = document.getElementById('owners') as HTMLInputElement;
+const findInput = document.getElementById('find') as HTMLInputElement;
+const findStatus = document.getElementById('find-status') as HTMLElement;
 
 let graph: CatalogGraph = { nodes: new Map(), edges: [], problems: [] };
 let layout: GraphLayout = { nodes: new Map(), width: 0, height: 0, layers: [] };
@@ -80,6 +83,10 @@ let viewport: Viewport = { scale: 1, originX: 0, originY: 0 };
 let selected: string | undefined;
 let highlighted = new Set<string>();
 let showExternal = true;
+/** The entity under the caret when it last moved, so only a move into another entity reacts. */
+let caretEntity: string | undefined;
+let matches: string[] = [];
+let matchIndex = 0;
 let ownersAsBadges = true;
 /** Every entity's owners, from the whole graph. */
 let allOwners: ReadonlyMap<string, readonly CatalogNode[]> = new Map();
@@ -94,7 +101,12 @@ window.addEventListener('message', (event: MessageEvent) => {
     graph?: WireGraph;
     showExternal?: boolean;
     ownersAsBadges?: boolean;
+    offset?: number;
   };
+  if (message.command === 'caret' && typeof message.offset === 'number') {
+    followCaret(message.offset);
+    return;
+  }
   if (message.command !== 'render' || !message.graph) {
     return;
   }
@@ -131,12 +143,127 @@ byId('reload').addEventListener('click', () => vscode.postMessage({ command: 're
 externalCheckbox.addEventListener('change', () => {
   showExternal = externalCheckbox.checked;
   render();
+  runFind(false);
 });
 ownersCheckbox.addEventListener('change', () => {
   ownersAsBadges = ownersCheckbox.checked;
   render();
+  runFind(false);
 });
 window.addEventListener('resize', () => applyViewport());
+
+// --- Find and caret ------------------------------------------------------------------------
+
+/**
+ * Typing selects and reveals the first match; Enter and Shift+Enter step through the rest, and
+ * Escape clears the field. Ctrl/Cmd+F anywhere in the panel jumps here.
+ */
+findInput.addEventListener('input', () => runFind(true));
+findInput.addEventListener('keydown', (event: KeyboardEvent) => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    if (matches.length > 0) {
+      matchIndex = (matchIndex + (event.shiftKey ? -1 : 1) + matches.length) % matches.length;
+      runFind(false);
+    }
+  } else if (event.key === 'Escape') {
+    findInput.value = '';
+    runFind(true);
+    findInput.blur();
+  }
+});
+window.addEventListener('keydown', (event: KeyboardEvent) => {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {
+    event.preventDefault();
+    findInput.focus();
+    findInput.select();
+  }
+});
+
+/**
+ * Drawn entities whose title or reference contains the query, ignoring case, in reading order:
+ * top row first, then left to right.
+ */
+function matching(query: string): string[] {
+  const needle = query.trim().toLowerCase();
+  if (!needle) {
+    return [];
+  }
+  return [...layout.nodes.entries()]
+    .filter(
+      ([key, bounds]) =>
+        bounds.node.title.toLowerCase().includes(needle) || key.includes(needle),
+    )
+    .sort(([, a], [, b]) => a.y - b.y || a.x - b.x)
+    .map(([key]) => key);
+}
+
+function runFind(restart: boolean): void {
+  matches = matching(findInput.value);
+  if (restart) {
+    matchIndex = 0;
+  }
+  matchIndex = Math.min(matchIndex, Math.max(0, matches.length - 1));
+  const target = matches[matchIndex];
+  if (target) {
+    reveal(target, true);
+  }
+  findStatus.textContent = !findInput.value.trim()
+    ? ''
+    : matches.length === 0
+      ? 'No matches'
+      : `${matchIndex + 1} of ${matches.length}`;
+}
+
+/**
+ * Follows the caret. It reads the graph already built, and keeps the user's zoom: they chose it,
+ * and the caret moves too often to keep changing it.
+ */
+function followCaret(offset: number): void {
+  const node = entityAt(graph, offset);
+  const key = node ? keyOf(node) : undefined;
+  if (key === caretEntity) {
+    return;
+  }
+  caretEntity = key;
+  if (key) {
+    reveal(key, false);
+  }
+}
+
+/**
+ * Selects a node and pans to it if it is not already wholly on screen. With `zoomToRead`, a view
+ * zoomed out too far to read is first brought back to actual size.
+ */
+function reveal(key: string, zoomToRead: boolean): void {
+  const bounds = layout.nodes.get(key);
+  if (!bounds) {
+    return;
+  }
+  select(key);
+  const rect = svg.getBoundingClientRect();
+  const zoomed = zoomToRead && viewport.scale < LABEL_SCALE_THRESHOLD;
+  if (zoomed) {
+    viewport.scale = 1;
+  }
+  const left = viewport.originX + bounds.x * viewport.scale;
+  const top = viewport.originY + bounds.y * viewport.scale;
+  const onScreen =
+    left >= 0 &&
+    top >= 0 &&
+    left + bounds.width * viewport.scale <= rect.width &&
+    top + bounds.height * viewport.scale <= rect.height;
+  if (zoomed || !onScreen) {
+    viewport.originX = rect.width / 2 - centerX(bounds) * viewport.scale;
+    viewport.originY = rect.height / 2 - centerY(bounds) * viewport.scale;
+  }
+  // Crossing the label threshold changes what is drawn, not just where.
+  if (zoomed) {
+    render();
+  } else {
+    applyViewport();
+  }
+}
 
 function byId(id: string): HTMLElement {
   const element = document.getElementById(id);
@@ -293,7 +420,11 @@ function renderNode(bounds: NodeBounds): SVGGElement {
   group.addEventListener('dblclick', (event) => {
     event.stopPropagation();
     if (node.sourceOffset !== undefined) {
-      vscode.postMessage({ command: 'navigate', offset: node.sourceOffset });
+      vscode.postMessage({
+        command: 'navigate',
+        offset: node.definition?.start ?? node.sourceOffset,
+        end: node.definition?.end,
+      });
     }
   });
   group.addEventListener('mouseenter', () => group.classList.add('hovered'));

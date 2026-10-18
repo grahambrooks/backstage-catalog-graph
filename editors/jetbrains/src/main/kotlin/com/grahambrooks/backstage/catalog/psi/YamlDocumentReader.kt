@@ -1,6 +1,7 @@
 package com.grahambrooks.backstage.catalog.psi
 
 import com.grahambrooks.backstage.catalog.model.RawDocument
+import com.grahambrooks.backstage.catalog.model.TextSpan
 import org.jetbrains.yaml.psi.YAMLFile
 import org.jetbrains.yaml.psi.YAMLMapping
 import org.jetbrains.yaml.psi.YAMLScalar
@@ -23,6 +24,7 @@ object YamlDocumentReader {
             RawDocument(
                 data = convertMapping(mapping),
                 offset = document.textRange.startOffset,
+                definition = mapping.textRange.let { TextSpan(it.startOffset, it.endOffset) },
             )
         }
 

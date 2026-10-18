@@ -21,6 +21,7 @@ export interface WireNode {
   readonly tags: readonly string[];
   readonly external: boolean;
   readonly sourceOffset: number | null;
+  readonly definition: { readonly start: number; readonly end: number } | null;
 }
 
 export interface WireGraph {
@@ -50,6 +51,7 @@ function toWireNode(key: string, node: CatalogNode): WireNode {
     tags: [...node.tags],
     external: node.external,
     sourceOffset: node.sourceOffset ?? null,
+    definition: node.definition ? { ...node.definition } : null,
   };
 }
 
@@ -69,6 +71,7 @@ export function fromWire(wire: WireGraph): CatalogGraph {
       tags: node.tags,
       external: node.external,
       sourceOffset: node.sourceOffset ?? undefined,
+      definition: node.definition ?? undefined,
     });
   }
   return { nodes, edges: wire.edges, problems: wire.problems.map((message) => ({ message })) };

@@ -137,6 +137,41 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         zoomAround(factor, Point2D.Double(width / 2.0, height / 2.0))
     }
 
+    /**
+     * Selects [ref] and pans to it if it is not already wholly on screen. With [zoomToRead], a
+     * view zoomed out too far to read is first brought back to actual size -- right for Find,
+     * wrong for following the caret, where the user chose the zoom and should keep it.
+     */
+    fun reveal(ref: EntityRef, zoomToRead: Boolean) {
+        val bounds = layout.nodes[ref] ?: return
+        select(ref)
+        val zoomed = zoomToRead && scale < LABEL_SCALE_THRESHOLD
+        if (zoomed) scale = 1.0
+        val left = originX + bounds.x * scale
+        val top = originY + bounds.y * scale
+        val onScreen = left >= 0 && top >= 0 &&
+            left + bounds.width * scale <= width && top + bounds.height * scale <= height
+        if (zoomed || !onScreen) {
+            originX = width / 2.0 - bounds.centerX * scale
+            originY = height / 2.0 - bounds.centerY * scale
+            clampOrigin()
+        }
+        repaint()
+    }
+
+    /**
+     * Drawn entities whose title or reference contains [query], ignoring case, in reading order:
+     * top row first, then left to right.
+     */
+    fun matching(query: String): List<EntityRef> {
+        val needle = query.trim()
+        if (needle.isEmpty()) return emptyList()
+        return layout.nodes.values
+            .filter { it.node.title.contains(needle, ignoreCase = true) || it.node.ref.toString().contains(needle, ignoreCase = true) }
+            .sortedWith(compareBy({ it.y }, { it.x }))
+            .map { it.node.ref }
+    }
+
     fun resetZoom() {
         scale = 1.0
         centreContent()
