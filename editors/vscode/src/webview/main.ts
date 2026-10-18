@@ -811,8 +811,9 @@ document.addEventListener('click', () => {
 
 /**
  * The outline view: the catalog as a tree of kind, entity, then each relation in or out (see
- * `outlineOf`). Clicking an entity selects its YAML, as clicking it in the graph does; clicking a
- * relation goes to the entity at its other end. A double-click also focuses the editor.
+ * `outlineOf`). Clicking an entity selects its YAML, as clicking it in the graph does, and expands
+ * or collapses it; clicking a relation goes to the entity at its other end. A double-click also
+ * focuses the editor.
  */
 function renderOutline(): void {
   const open = new Set(
@@ -867,8 +868,11 @@ function activate(element: HTMLElement, node: CatalogNode): void {
   }
   element.classList.add('link');
   element.addEventListener('click', (event) => {
-    // A click on an entity's summary would also fold it; selecting should not.
-    event.preventDefault();
+    // On an entity's summary a click also expands or collapses it. The second click of a
+    // double-click must not, or the row would fold straight back up.
+    if (event.detail >= 2) {
+      event.preventDefault();
+    }
     select(keyOf(node));
     navigate(node, event.detail >= 2);
   });

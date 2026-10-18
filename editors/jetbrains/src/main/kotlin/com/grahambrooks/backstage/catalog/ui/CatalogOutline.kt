@@ -23,8 +23,9 @@ import javax.swing.tree.TreePath
  * The outline view: the catalog as a tree of kind, entity, then each relation in or out (see
  * [Outline]). It reads at any size, which a picture of a large catalog does not.
  *
- * Selecting an entity selects its YAML, as clicking it in the graph does; selecting a relation
- * goes to the entity at its other end. A double-click also moves focus to the editor.
+ * Clicking an entity selects its YAML, as clicking it in the graph does, and expands or collapses
+ * its relations; selecting a relation goes to the entity at its other end. A double-click also
+ * moves focus to the editor.
  */
 class CatalogOutline : JBScrollPane() {
 
@@ -36,6 +37,9 @@ class CatalogOutline : JBScrollPane() {
     private val tree = Tree(model).apply {
         isRootVisible = false
         showsRootHandles = true
+        // A single click expands or collapses, as in VS Code. JTree toggles only when the click
+        // count equals this, so the second click of a double-click leaves the row open.
+        toggleClickCount = 1
         cellRenderer = Renderer()
     }
 
