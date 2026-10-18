@@ -1,0 +1,20 @@
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphPanel.kt
+  s_ccff39c7afa1ba::t_1647811e8a896c 21-22,68-70,77-79,81,84-89,100-103,128-129,131,167-174,407,446,475,558-559,562
+  s_ccff39c7afa1ba::t_0682c3d067187e 244-246,249
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "06f864803f1f46581c324ef9ccc7e309a3a0396e",
+  "prompts": {},
+  "sessions": {
+    "s_ccff39c7afa1ba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "077998fa-6922-450c-91cb-7db0d67c3e3c",
+        "model": "unknown"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
