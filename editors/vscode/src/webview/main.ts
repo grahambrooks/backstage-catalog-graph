@@ -8,14 +8,18 @@ import {
   isEmpty,
   neighbourhoodOf,
 } from '../core/catalogGraph';
+import { EdgeRouter, Point, Route } from '../core/edgeRouter';
+import { Direction, step } from '../core/navigation';
+import { OutlineEntity, OutlineRelation, outlineOf } from '../core/outline';
+import { systemClusters } from '../core/systemClusters';
 import {
+  ClusterBox,
+  EMPTY_LAYOUT,
   GraphLayout,
   NodeBounds,
-  bottom,
   centerX,
   centerY,
   layoutGraph,
-  right,
 } from '../core/layeredLayout';
 import { focusAround } from '../core/focus';
 import { foldOwners } from '../core/ownerBadges';
@@ -50,6 +54,11 @@ const ACCENT_WIDTH = 5;
 const TEXT_INSET = 12;
 const ARC = 10;
 const CURVE_TENSION = 0.45;
+const ARC_LIFT = 26;
+const MAX_ARC_LIFT = 90;
+const CLUSTER_ARC = 18;
+/** Wider rows wrap onto several (graph pixels, before zoom); see `wrap` in the layout. */
+const MAX_ROW_WIDTH = 1200;
 const ARROW_LENGTH = 9;
 const ARROW_SPREAD = 0.42;
 const ZOOM_STEP = 1.12;
@@ -78,16 +87,25 @@ const problemsLabel = document.getElementById('problems') as HTMLElement;
 const externalCheckbox = document.getElementById('external') as HTMLInputElement;
 const ownersCheckbox = document.getElementById('owners') as HTMLInputElement;
 const focusCheckbox = document.getElementById('focus') as HTMLInputElement;
+const groupCheckbox = document.getElementById('group') as HTMLInputElement;
+const outlineCheckbox = document.getElementById('outline-toggle') as HTMLInputElement;
+const outlineView = document.getElementById('outline') as HTMLElement;
+const problemList = document.getElementById('problem-list') as HTMLElement;
 const findInput = document.getElementById('find') as HTMLInputElement;
 const findStatus = document.getElementById('find-status') as HTMLElement;
 
 let graph: CatalogGraph = { nodes: new Map(), edges: [], problems: [] };
-let layout: GraphLayout = { nodes: new Map(), width: 0, height: 0, layers: [] };
+let layout: GraphLayout = EMPTY_LAYOUT;
 let viewport: Viewport = { scale: 1, originX: 0, originY: 0 };
 let selected: string | undefined;
 let highlighted = new Set<string>();
 let showExternal = true;
 let focusMode = false;
+let groupBySystem = false;
+let showingOutline = false;
+/** Each entity's containing System while `groupBySystem` is on; see `systemClusters`. */
+let clusters: ReadonlyMap<string, string> = new Map();
+let router = new EdgeRouter(EMPTY_LAYOUT);
 /** The layout before focus mode cuts it down; Find searches and orders by this one. */
 let fullLayout: GraphLayout = layout;
 /** The entity under the caret when it last moved, so only a move into another entity reacts. */
@@ -151,6 +169,19 @@ externalCheckbox.addEventListener('change', () => {
   showExternal = externalCheckbox.checked;
   render();
   runFind(false);
+});
+groupCheckbox.addEventListener('change', () => {
+  groupBySystem = groupCheckbox.checked;
+  render();
+  fitToWindow();
+});
+outlineCheckbox.addEventListener('change', () => {
+  showingOutline = outlineCheckbox.checked;
+  canvas.hidden = showingOutline;
+  outlineView.hidden = !showingOutline;
+  if (showingOutline) {
+    renderOutline();
+  }
 });
 focusCheckbox.addEventListener('change', () => {
   focusMode = focusCheckbox.checked;
@@ -314,7 +345,9 @@ function drawnGraph(): CatalogGraph {
 
 function render(): void {
   const unfocused = drawnGraph();
-  fullLayout = layoutGraph(unfocused, measure);
+  clusters = groupBySystem ? systemClusters(unfocused) : new Map();
+  const options = { maxRowWidth: MAX_ROW_WIDTH, clusters };
+  fullLayout = layoutGraph(unfocused, measure, options);
   const focus = focusMode && selected && unfocused.nodes.has(selected) ? selected : undefined;
   const visible = focus
     ? focusAround(
@@ -323,7 +356,8 @@ function render(): void {
         [...owners].filter(([, list]) => list.some((owner) => keyOf(owner) === focus)).map(([key]) => key),
       )
     : unfocused;
-  layout = focus ? layoutGraph(visible, measure) : fullLayout;
+  layout = focus ? layoutGraph(visible, measure, options) : fullLayout;
+  router = new EdgeRouter(layout);
 
   while (svg.firstChild) {
     svg.removeChild(svg.firstChild);
@@ -332,7 +366,17 @@ function render(): void {
   root.setAttribute('id', 'viewport');
   svg.appendChild(root);
 
+  for (const box of layout.clusters) {
+    const element = renderCluster(box);
+    if (element) {
+      root.appendChild(element);
+    }
+  }
   for (const edge of visible.edges) {
+    // Inside a System's box, an edge to that System says what the box already does.
+    if (edge.type === 'partOf' && clusters.get(edge.from) === edge.to) {
+      continue;
+    }
     const element = renderEdge(edge.from, edge.to, edge.type, isDangling(graph, edge));
     if (element) {
       root.appendChild(element);
@@ -346,6 +390,9 @@ function render(): void {
   renderStatus();
   renderLegend(visible);
   renderProblems();
+  if (showingOutline) {
+    renderOutline();
+  }
   applyViewport();
   applyHighlight();
 }
@@ -444,14 +491,7 @@ function renderNode(bounds: NodeBounds): SVGGElement {
   group.addEventListener('click', (event) => {
     event.stopPropagation();
     select(keyFor(bounds));
-    if (node.sourceOffset !== undefined) {
-      vscode.postMessage({
-        command: 'navigate',
-        offset: node.definition?.start ?? node.sourceOffset,
-        end: node.definition?.end,
-        focus: event.detail >= 2,
-      });
-    }
+    navigate(node, event.detail >= 2);
   });
   group.addEventListener('mouseenter', () => group.classList.add('hovered'));
   group.addEventListener('mouseleave', () => group.classList.remove('hovered'));
@@ -543,20 +583,22 @@ function renderEdge(
   group.dataset.from = fromKey;
   group.dataset.to = toKey;
 
-  const [start, end] = anchors(from, to);
-  const control1 = { x: start.x, y: start.y + (end.y - start.y) * CURVE_TENSION };
-  const control2 = { x: end.x, y: end.y - (end.y - start.y) * CURVE_TENSION };
-
+  const curves = curvesOf(router.route(from, to));
   const path = document.createElementNS(SVG_NS, 'path');
   path.setAttribute(
     'd',
-    `M ${start.x} ${start.y} C ${control1.x} ${control1.y}, ${control2.x} ${control2.y}, ${end.x} ${end.y}`,
+    [
+      `M ${curves[0][0].x} ${curves[0][0].y}`,
+      ...curves.map(([, c1, c2, end]) => `C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${end.x} ${end.y}`),
+    ].join(' '),
   );
   group.appendChild(path);
-  group.appendChild(arrowHead(control2, end));
+  const last = curves[curves.length - 1];
+  group.appendChild(arrowHead(last[2], last[3]));
 
   if (viewport.scale >= LABEL_SCALE_THRESHOLD) {
-    const mid = pointOnCurve(start, control1, control2, end, 0.5);
+    const [p0, p1, p2, p3] = curves[Math.floor(curves.length / 2)];
+    const mid = pointOnCurve(p0, p1, p2, p3, 0.5);
     const label = text(mid.x, mid.y + 3, relation, '');
     label.setAttribute('text-anchor', 'middle');
     group.appendChild(label);
@@ -565,36 +607,49 @@ function renderEdge(
   return group;
 }
 
+type Curve = [Point, Point, Point, Point];
+
 /**
- * Picks which side of each node the edge leaves and enters. Relations run both up (a component
- * to its system) and down (a component to its owning group), so anchoring purely bottom-to-top
- * would draw half the edges backwards through their own nodes.
+ * The drawn shape of a route. Between rows, one cubic per leg with vertical tangents at every
+ * point, so the edge leaves and enters nodes straight and passes through a row's gap upright.
+ * Within a row, a single arc over it, rising further the further apart its ends are.
  */
-function anchors(
-  from: NodeBounds,
-  to: NodeBounds,
-): [{ x: number; y: number }, { x: number; y: number }] {
-  const sameLayer = Math.abs(centerY(from) - centerY(to)) < 1;
-  if (sameLayer) {
-    return centerX(to) >= centerX(from)
-      ? [
-          { x: right(from), y: centerY(from) },
-          { x: to.x, y: centerY(to) },
-        ]
-      : [
-          { x: from.x, y: centerY(from) },
-          { x: right(to), y: centerY(to) },
-        ];
+function curvesOf(route: Route): Curve[] {
+  const points = route.points;
+  if (route.sameRow) {
+    const start = points[0];
+    const end = points[points.length - 1];
+    const lift = Math.min(MAX_ARC_LIFT, ARC_LIFT + Math.abs(end.x - start.x) * 0.12);
+    return [[start, { x: start.x, y: start.y - lift }, { x: end.x, y: end.y - lift }, end]];
   }
-  return centerY(to) > centerY(from)
-    ? [
-        { x: centerX(from), y: bottom(from) },
-        { x: centerX(to), y: to.y },
-      ]
-    : [
-        { x: centerX(from), y: from.y },
-        { x: centerX(to), y: bottom(to) },
-      ];
+  const curves: Curve[] = [];
+  for (let index = 0; index + 1 < points.length; index++) {
+    const [p, q] = [points[index], points[index + 1]];
+    const dy = (q.y - p.y) * CURVE_TENSION;
+    curves.push([p, { x: p.x, y: p.y + dy }, { x: q.x, y: q.y - dy }, q]);
+  }
+  return curves;
+}
+
+/**
+ * A System drawn as a container: a lightly tinted box behind its header node and members,
+ * dashed when the System is a placeholder declared elsewhere.
+ */
+function renderCluster(box: ClusterBox): SVGRectElement | undefined {
+  const system = graph.nodes.get(box.system);
+  if (!system) {
+    return undefined;
+  }
+  const rect = document.createElementNS(SVG_NS, 'rect');
+  rect.setAttribute('class', `cluster${system.external ? ' external' : ''}`);
+  rect.setAttribute('x', String(box.x));
+  rect.setAttribute('y', String(box.y));
+  rect.setAttribute('width', String(box.width));
+  rect.setAttribute('height', String(box.height));
+  rect.setAttribute('rx', String(CLUSTER_ARC));
+  rect.setAttribute('fill', tintFor(system.kind.displayName, 0.06));
+  rect.setAttribute('stroke', tintFor(system.kind.displayName, 0.45));
+  return rect;
 }
 
 function arrowHead(
@@ -720,8 +775,186 @@ function renderProblems(): void {
   const first = graph.problems[0].message;
   problemsLabel.textContent =
     graph.problems.length === 1 ? first : `${first} (+${graph.problems.length - 1} more)`;
-  problemsLabel.title = graph.problems.map((problem) => problem.message).join('\n');
+  problemsLabel.title = 'Click to list every problem and jump to it';
+  problemList.hidden = true;
 }
+
+/**
+ * Every problem in a list under the warning. Picking one with a source offset moves the caret
+ * there and focuses the editor.
+ */
+problemsLabel.addEventListener('click', (event) => {
+  event.stopPropagation();
+  if (!problemList.hidden) {
+    problemList.hidden = true;
+    return;
+  }
+  problemList.replaceChildren(
+    ...graph.problems.map((problem) => {
+      const item = document.createElement('button');
+      item.textContent = problem.message;
+      item.disabled = problem.sourceOffset === undefined;
+      item.addEventListener('click', () => {
+        problemList.hidden = true;
+        vscode.postMessage({ command: 'navigate', offset: problem.sourceOffset, focus: true });
+      });
+      return item;
+    }),
+  );
+  problemList.hidden = false;
+});
+document.addEventListener('click', () => {
+  problemList.hidden = true;
+});
+
+// --- Outline --------------------------------------------------------------------------------
+
+/**
+ * The outline view: the catalog as a tree of kind, entity, then each relation in or out (see
+ * `outlineOf`). Clicking an entity selects its YAML, as clicking it in the graph does; clicking a
+ * relation goes to the entity at its other end. A double-click also focuses the editor.
+ */
+function renderOutline(): void {
+  const open = new Set(
+    Array.from(outlineView.querySelectorAll<HTMLDetailsElement>('details.entity[open]')).map(
+      (element) => element.dataset.key ?? '',
+    ),
+  );
+  outlineView.replaceChildren(
+    ...outlineOf(visibleGraph()).map((section) => {
+      const details = document.createElement('details');
+      details.open = true;
+      const summary = document.createElement('summary');
+      summary.className = 'section';
+      summary.append(section.kind.displayName, muted(`  ${section.entities.length}`));
+      details.append(summary, ...section.entities.map((entity) => outlineEntity(entity, open)));
+      return details;
+    }),
+  );
+  markOutlineSelection();
+}
+
+function outlineEntity(entity: OutlineEntity, open: ReadonlySet<string>): HTMLElement {
+  const key = keyOf(entity.node);
+  const details = document.createElement('details');
+  details.className = 'entity';
+  details.dataset.key = key;
+  details.open = open.has(key);
+  const summary = document.createElement('summary');
+  summary.append(titleOf(entity.node), muted(`  ${key}`));
+  if (entity.node.external) {
+    summary.append(muted('  external'));
+  }
+  activate(summary, entity.node);
+  details.append(summary, ...entity.relations.map(outlineRelation));
+  return details;
+}
+
+function outlineRelation(relation: OutlineRelation): HTMLElement {
+  const row = document.createElement('div');
+  row.className = 'relation';
+  const type = document.createElement('span');
+  type.textContent = `${relation.type}  `;
+  type.style.color = relationColour(relation.type);
+  row.append(muted(relation.outgoing ? '→ ' : '← '), type, titleOf(relation.other));
+  activate(row, relation.other);
+  return row;
+}
+
+function activate(element: HTMLElement, node: CatalogNode): void {
+  if (node.external) {
+    return;
+  }
+  element.classList.add('link');
+  element.addEventListener('click', (event) => {
+    // A click on an entity's summary would also fold it; selecting should not.
+    event.preventDefault();
+    select(keyOf(node));
+    navigate(node, event.detail >= 2);
+  });
+}
+
+function titleOf(node: CatalogNode): HTMLElement {
+  const span = document.createElement('span');
+  span.textContent = node.title;
+  if (node.external) {
+    span.className = 'external';
+  }
+  return span;
+}
+
+function muted(value: string): HTMLElement {
+  const span = document.createElement('span');
+  span.className = 'muted';
+  span.textContent = value;
+  return span;
+}
+
+/** Marks and scrolls to the selected entity's row, following the graph's selection. */
+function markOutlineSelection(): void {
+  for (const element of Array.from(outlineView.querySelectorAll<HTMLElement>('details.entity'))) {
+    const isSelected = element.dataset.key === selected;
+    element.classList.toggle('selected', isSelected);
+    if (isSelected && showingOutline) {
+      element.scrollIntoView({ block: 'nearest' });
+    }
+  }
+}
+
+/** Asks the extension to select `node`'s YAML; `focus` also moves focus to the editor. */
+function navigate(node: CatalogNode, focus: boolean): void {
+  if (node.sourceOffset === undefined) {
+    return;
+  }
+  vscode.postMessage({
+    command: 'navigate',
+    offset: node.definition?.start ?? node.sourceOffset,
+    end: node.definition?.end,
+    focus,
+  });
+}
+
+// --- Keyboard -------------------------------------------------------------------------------
+
+const ARROWS: Record<string, Direction> = {
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+  ArrowUp: 'up',
+  ArrowDown: 'down',
+};
+
+/**
+ * Arrows move the selection to the nearest node that way, selecting its YAML as a click does;
+ * Enter also focuses the editor; Escape deselects. Plus, minus and 0 zoom in, out and fit.
+ */
+canvas.addEventListener('keydown', (event: KeyboardEvent) => {
+  const direction = ARROWS[event.key];
+  if (direction) {
+    const next = step(layout, selected, direction);
+    const node = next ? graph.nodes.get(next) : undefined;
+    if (next && node) {
+      reveal(next, false);
+      navigate(node, false);
+    }
+  } else if (event.key === 'Enter') {
+    const node = selected ? graph.nodes.get(selected) : undefined;
+    if (node) {
+      navigate(node, true);
+    }
+  } else if (event.key === 'Escape') {
+    select(undefined);
+  } else if (event.key === '+' || event.key === '=') {
+    zoomAround(ZOOM_STEP * 1.08, centreOfView());
+  } else if (event.key === '-') {
+    zoomAround(1 / (ZOOM_STEP * 1.08), centreOfView());
+  } else if (event.key === '0') {
+    fitToWindow();
+  } else {
+    return;
+  }
+  event.preventDefault();
+});
+svg.addEventListener('pointerdown', () => canvas.focus());
 
 // --- Selection and viewport -------------------------------------------------------------------
 
@@ -736,6 +969,7 @@ function select(key: string | undefined): void {
   }
   applyHighlight();
   renderStatus();
+  markOutlineSelection();
 }
 
 // A click on empty canvas deselects -- but not the click that ends a pan, or every drag would

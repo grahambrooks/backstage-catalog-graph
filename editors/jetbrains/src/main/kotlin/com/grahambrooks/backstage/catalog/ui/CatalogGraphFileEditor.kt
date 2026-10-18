@@ -50,7 +50,8 @@ class CatalogGraphFileEditor(
     private var caretEntity: EntityRef? = null
 
     init {
-        view.canvas.onNavigate = ::navigateTo
+        view.onNavigate = ::navigateTo
+        view.onProblemChosen = { offset -> OpenFileDescriptor(project, file, offset).navigate(true) }
 
         document()?.addDocumentListener(
             object : DocumentListener {
@@ -69,7 +70,7 @@ class CatalogGraphFileEditor(
                     val ref = graph.entityAt(event.editor.caretModel.offset)?.ref
                     if (ref == caretEntity) return
                     caretEntity = ref
-                    if (ref != null) view.canvas.reveal(ref, zoomToRead = false)
+                    if (ref != null) view.reveal(ref)
                 }
             },
             this,

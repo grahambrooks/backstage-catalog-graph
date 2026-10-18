@@ -1,12 +1,18 @@
 import { deepStrictEqual, equal, ok } from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { describe, test } from 'node:test';
 
 import { isCatalogFileName, matchesBaseName } from '../core/catalogFiles';
 import { buildCatalogGraph } from '../core/catalogGraphBuilder';
 import { declaredNodes, entityAt, externalNodes, keyOf } from '../core/catalogGraph';
 import { formatRef, parseRef, shortLabel } from '../core/entityRef';
+import { EdgeRouter } from '../core/edgeRouter';
 import { focusAround } from '../core/focus';
-import { layoutGraph } from '../core/layeredLayout';
+import { step } from '../core/navigation';
+import { outlineOf } from '../core/outline';
+import { systemClusters } from '../core/systemClusters';
+import { NodeBounds, bottom, layoutGraph, right } from '../core/layeredLayout';
 import { foldOwners } from '../core/ownerBadges';
 import { readDocuments } from '../core/yamlDocuments';
 import { fromWire, toWire } from '../core/wire';
@@ -329,5 +335,192 @@ metadata: { name: team }
 
   test('focusing on something not drawn changes nothing', () => {
     equal(focusAround(drawn, 'component:default/hidden'), drawn);
+  });
+});
+
+/** One of the shared `examples/`, from the repository root above `out-test/test/`. */
+function example(name: string) {
+  const root = resolve(__dirname, '../../../..');
+  return buildCatalogGraph(
+    readDocuments(readFileSync(join(root, 'examples', name, 'catalog-info.yaml'), 'utf8')),
+  );
+}
+
+const FIXED = () => ({ width: 100, height: 50 });
+
+describe('Systems as containers', () => {
+  const large = example('08-large-catalog');
+  const clusters = systemClusters(large);
+  const boxed = layoutGraph(large, FIXED, { clusters });
+  const overlaps = (a: NodeBounds, box: { x: number; y: number; width: number; height: number }) =>
+    a.x < box.x + box.width && right(a) > box.x && a.y < box.y + box.height && bottom(a) > box.y;
+
+  test('subcomponents belong to their parent\'s System', () => {
+    const graph = buildCatalogGraph(
+      readDocuments(`
+kind: System
+metadata: { name: shop }
+---
+kind: Component
+metadata: { name: cart }
+spec: { system: shop }
+---
+kind: Component
+metadata: { name: cart-widget }
+spec: { subcomponentOf: cart }
+`),
+    );
+    deepStrictEqual(
+      systemClusters(graph),
+      new Map([
+        ['component:default/cart', 'system:default/shop'],
+        ['component:default/cart-widget', 'system:default/shop'],
+      ]),
+    );
+  });
+
+  test('boxes hold their members and nothing else', () => {
+    equal(boxed.clusters.length, new Set(clusters.values()).size);
+    for (const box of boxed.clusters) {
+      for (const [key, bounds] of boxed.nodes) {
+        const member = clusters.get(key) === box.system || key === box.system;
+        const inside =
+          bounds.x >= box.x &&
+          right(bounds) <= box.x + box.width &&
+          bounds.y >= box.y &&
+          bottom(bounds) <= box.y + box.height;
+        if (member) {
+          ok(inside, `${key} outside ${box.system}`);
+        } else {
+          ok(!overlaps(bounds, box), `${key} intrudes on ${box.system}`);
+        }
+      }
+    }
+  });
+
+  test('the logical layers are unchanged', () => {
+    deepStrictEqual(boxed.layers, layoutGraph(large, FIXED).layers);
+  });
+});
+
+describe('wrapping wide rows', () => {
+  const large = example('08-large-catalog');
+  const wrapped = layoutGraph(large, FIXED, { maxRowWidth: 700 });
+
+  test('no row is wider than the limit, and the layers are unchanged', () => {
+    const rows = new Map<number, number>();
+    for (const bounds of wrapped.nodes.values()) {
+      rows.set(bounds.y, (rows.get(bounds.y) ?? 0) + 1);
+    }
+    for (const count of rows.values()) {
+      ok(count === 1 || count * 100 + (count - 1) * 32 <= 700, `row of ${count} too wide`);
+    }
+    deepStrictEqual(wrapped.layers, layoutGraph(large, FIXED).layers);
+  });
+});
+
+describe('edge routing', () => {
+  const large = example('08-large-catalog');
+  const layout = layoutGraph(large, FIXED);
+  const router = new EdgeRouter(layout);
+
+  test('no straight leg of a route passes through a node it does not join', () => {
+    for (const edge of large.edges) {
+      const from = layout.nodes.get(edge.from)!;
+      const to = layout.nodes.get(edge.to)!;
+      const route = router.route(from, to);
+      if (route.sameRow) {
+        continue;
+      }
+      for (let leg = 0; leg + 1 < route.points.length; leg++) {
+        const [a, b] = [route.points[leg], route.points[leg + 1]];
+        for (const node of layout.nodes.values()) {
+          if (node === from || node === to) {
+            continue;
+          }
+          for (let sample = 1; sample < 20; sample++) {
+            const x = a.x + ((b.x - a.x) * sample) / 20;
+            const y = a.y + ((b.y - a.y) * sample) / 20;
+            const inside = x > node.x && x < right(node) && y > node.y && y < bottom(node);
+            ok(!inside, `${edge.from} -> ${edge.to} crosses ${keyOf(node.node.ref)}`);
+          }
+        }
+      }
+    }
+  });
+
+  test('edges within one row arc over it', () => {
+    const [first] = layout.nodes.values();
+    const a = { ...first, x: 0, y: 0 };
+    const b = { ...first, x: 400, y: 0 };
+    const route = new EdgeRouter(layout).route(a, b);
+    ok(route.sameRow);
+    deepStrictEqual(route.points, [
+      { x: 50, y: 0 },
+      { x: 450, y: 0 },
+    ]);
+  });
+});
+
+describe('keyboard navigation', () => {
+  //   a   b   c        row 0
+  //     d       e      row 1
+  const graph = buildCatalogGraph(
+    readDocuments(['a', 'b', 'c', 'd', 'e'].map((n) => `kind: Component\nmetadata: { name: ${n} }\n`).join('---\n')),
+  );
+  const place = { a: [0, 0], b: [150, 0], c: [300, 0], d: [60, 120], e: [360, 120] } as const;
+  const nodes = new Map(
+    [...graph.nodes].map(([key, node]) => {
+      const [x, y] = place[node.title as keyof typeof place];
+      return [key, { node, x, y, width: 100, height: 50 }];
+    }),
+  );
+  const layout = { nodes, width: 460, height: 170, layers: [], clusters: [] };
+  const k = (name: string) => `component:default/${name}`;
+
+  test('with nothing selected any arrow starts at the first node in reading order', () => {
+    equal(step(layout, undefined, 'down'), k('a'));
+  });
+
+  test('left and right stay in the row', () => {
+    equal(step(layout, k('b'), 'right'), k('c'));
+    equal(step(layout, k('b'), 'left'), k('a'));
+    equal(step(layout, k('d'), 'right'), k('e'));
+  });
+
+  test('up and down go to the horizontally closest node in the next row', () => {
+    equal(step(layout, k('a'), 'down'), k('d'));
+    equal(step(layout, k('c'), 'down'), k('e'));
+    equal(step(layout, k('e'), 'up'), k('c'));
+  });
+
+  test('with nowhere to go the selection stays', () => {
+    equal(step(layout, k('a'), 'left'), k('a'));
+    equal(step(layout, k('b'), 'up'), k('b'));
+  });
+});
+
+describe('outline', () => {
+  const graph = example('02-storefront-system');
+  const outline = outlineOf(graph);
+
+  test('sections follow the layer order', () => {
+    const ranks = outline.map((section) => section.kind.rank);
+    deepStrictEqual(ranks, [...ranks].sort((a, b) => a - b));
+  });
+
+  test('every entity is listed once and every relation appears from both ends', () => {
+    equal(outline.reduce((sum, s) => sum + s.entities.length, 0), graph.nodes.size);
+    equal(
+      outline.reduce((sum, s) => sum + s.entities.reduce((n, e) => n + e.relations.length, 0), 0),
+      graph.edges.length * 2,
+    );
+  });
+
+  test('declared relations come before incoming ones', () => {
+    for (const entity of outline.flatMap((section) => section.entities)) {
+      const directions = entity.relations.map((relation) => relation.outgoing);
+      deepStrictEqual(directions, [...directions].sort((a, b) => Number(b) - Number(a)));
+    }
   });
 });

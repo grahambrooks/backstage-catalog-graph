@@ -1,6 +1,7 @@
 package com.grahambrooks.backstage.catalog.ui
 
 import com.grahambrooks.backstage.catalog.model.CatalogGraph
+import com.grahambrooks.backstage.catalog.model.CatalogProblem
 import com.grahambrooks.backstage.catalog.model.CatalogNode
 import com.grahambrooks.backstage.catalog.model.EntityKind
 import com.grahambrooks.backstage.catalog.model.EntityRef
@@ -14,13 +15,17 @@ import com.intellij.openapi.actionSystem.Separator
 import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.CommonShortcuts
+import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.ui.DocumentAdapter
+import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.SearchTextField
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
+import java.awt.CardLayout
+import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.Font
@@ -29,6 +34,8 @@ import java.awt.Graphics2D
 import java.awt.RenderingHints
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
 import javax.swing.event.DocumentEvent
 
@@ -41,11 +48,28 @@ class CatalogGraphView(
 ) : JBPanel<CatalogGraphView>(BorderLayout()) {
 
     val canvas = CatalogGraphPanel()
+    private val outline = CatalogOutline()
+
+    /** The canvas and the outline share the centre; only one shows at a time. */
+    private val centre = JBPanel<JBPanel<*>>(CardLayout()).apply {
+        add(canvas, GRAPH_CARD)
+        add(outline, OUTLINE_CARD)
+    }
+    private var showingOutline = false
+
+    /** Invoked to select a declared entity's YAML, from the graph or the outline. */
+    var onNavigate: ((node: CatalogNode, focus: Boolean) -> Unit)? = null
+
+    /** Invoked with a problem's source offset when it is picked from the problems list. */
+    var onProblemChosen: ((offset: Int) -> Unit)? = null
+
+    private var problems: List<CatalogProblem> = emptyList()
 
     private val problemsLabel = JBLabel().apply {
         icon = AllIcons.General.Warning
         border = JBUI.Borders.empty(4, 8)
         isVisible = false
+        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
     }
 
     private val statusLabel = JBLabel().apply {
@@ -93,11 +117,46 @@ class CatalogGraphView(
         }
 
         add(header, BorderLayout.NORTH)
-        add(canvas, BorderLayout.CENTER)
+        add(centre, BorderLayout.CENTER)
         add(footer, BorderLayout.SOUTH)
 
         installFind()
         canvas.onLayoutChanged = ::updateLegend
+        canvas.onNavigate = { node, focus -> onNavigate?.invoke(node, focus) }
+        outline.onNavigate = { node, focus ->
+            canvas.reveal(node.ref, zoomToRead = false)
+            onNavigate?.invoke(node, focus)
+        }
+        problemsLabel.addMouseListener(object : MouseAdapter() {
+            override fun mouseClicked(event: MouseEvent) = showProblems()
+        })
+    }
+
+    /** Selects [ref] in whichever view is showing, following the caret in the YAML. */
+    fun reveal(ref: EntityRef) {
+        canvas.reveal(ref, zoomToRead = false)
+        if (showingOutline) outline.reveal(ref)
+    }
+
+    /**
+     * Every problem in a popup under the warning. Picking one with a source offset moves the
+     * caret there; one without -- there are none today, but the model allows it -- does nothing.
+     */
+    private fun showProblems() {
+        if (problems.isEmpty()) return
+        JBPopupFactory.getInstance()
+            .createPopupChooserBuilder(problems)
+            .setRenderer(SimpleListCellRenderer.create("") { it.message })
+            .setItemChosenCallback { problem -> problem.sourceOffset?.let { onProblemChosen?.invoke(it) } }
+            .setTitle(if (problems.size == 1) "1 problem" else "${problems.size} problems")
+            .createPopup()
+            .showUnderneathOf(problemsLabel)
+    }
+
+    private fun setOutlineShowing(show: Boolean) {
+        showingOutline = show
+        (centre.layout as CardLayout).show(centre, if (show) OUTLINE_CARD else GRAPH_CARD)
+        if (show) outline.show(canvas.visibleEntities())
     }
 
     /**
@@ -153,6 +212,7 @@ class CatalogGraphView(
 
     fun show(graph: CatalogGraph, preserveViewport: Boolean) {
         canvas.setGraph(graph, preserveViewport)
+        if (showingOutline) outline.show(canvas.visibleEntities())
         updateProblems(graph)
         updateStatus(graph, selected = null)
         canvas.onSelectionChanged = { node -> updateStatus(graph, node) }
@@ -168,6 +228,7 @@ class CatalogGraphView(
     }
 
     private fun updateProblems(graph: CatalogGraph) {
+        problems = graph.problems
         problemsLabel.isVisible = graph.problems.isNotEmpty()
         if (graph.problems.isEmpty()) return
         val first = graph.problems.first().message
@@ -176,7 +237,7 @@ class CatalogGraphView(
         } else {
             "$first (+${graph.problems.size - 1} more)"
         }
-        problemsLabel.toolTipText = graph.problems.joinToString("<br/>", "<html>", "</html>") { it.message }
+        problemsLabel.toolTipText = "Click to list every problem and jump to it"
     }
 
     private fun updateStatus(graph: CatalogGraph, selected: CatalogNode?) {
@@ -208,6 +269,7 @@ class CatalogGraphView(
             override fun setSelected(event: AnActionEvent, state: Boolean) {
                 canvas.setShowExternal(state)
                 runFind(restart = false)
+                if (showingOutline) outline.show(canvas.visibleEntities())
             }
         })
         add(object : ToggleAction("Show Owners as Badges", OWNER_TOGGLE_HINT, AllIcons.Nodes.Tag) {
@@ -218,10 +280,20 @@ class CatalogGraphView(
                 runFind(restart = false)
             }
         })
+        add(object : ToggleAction("Group by System", GROUP_TOGGLE_HINT, AllIcons.Actions.GroupBy) {
+            override fun getActionUpdateThread() = ActionUpdateThread.EDT
+            override fun isSelected(event: AnActionEvent) = canvas.isGroupingBySystem()
+            override fun setSelected(event: AnActionEvent, state: Boolean) = canvas.setGroupBySystem(state)
+        })
         add(object : ToggleAction("Focus on Selection", FOCUS_TOGGLE_HINT, AllIcons.General.Locate) {
             override fun getActionUpdateThread() = ActionUpdateThread.EDT
             override fun isSelected(event: AnActionEvent) = canvas.isFocusMode()
             override fun setSelected(event: AnActionEvent, state: Boolean) = canvas.setFocusMode(state)
+        })
+        add(object : ToggleAction("Show Outline", OUTLINE_TOGGLE_HINT, AllIcons.Actions.ListFiles) {
+            override fun getActionUpdateThread() = ActionUpdateThread.EDT
+            override fun isSelected(event: AnActionEvent) = showingOutline
+            override fun setSelected(event: AnActionEvent, state: Boolean) = setOutlineShowing(state)
         })
         add(Separator.getInstance())
         add(simpleAction("Reload Graph", AllIcons.Actions.Refresh) { onRefresh() })
@@ -287,6 +359,12 @@ class CatalogGraphView(
         const val TOOLBAR_PLACE = "BackstageCatalogGraphToolbar"
         const val EXTERNAL_TOGGLE_HINT =
             "Show placeholders for entities referenced by this file but defined elsewhere"
+        const val GRAPH_CARD = "graph"
+        const val OUTLINE_CARD = "outline"
+        const val GROUP_TOGGLE_HINT =
+            "Draw each System as a box around the entities that are part of it"
+        const val OUTLINE_TOGGLE_HINT =
+            "Show the catalog as a tree of kind, entity and relations instead of a graph"
         const val FOCUS_TOGGLE_HINT =
             "Draw only the selected entity and what it is joined to; the focus follows the selection"
         const val OWNER_TOGGLE_HINT =

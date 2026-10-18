@@ -129,6 +129,11 @@ ordering, a layer is drawn as one row per hierarchy depth, parents above childre
 - Each row keeps the layer's order. Then each row below the first gets one stable barycentre
   pass against the row above it, using parents only, so children sit under their parents.
 
+Two further drawing choices are also presentation only. A row wider than the editor's limit wraps
+onto several, in order. And with Systems drawn as containers, the rows a System's members occupy
+place that System's nodes in one column, so its box encloses them. Neither changes a layer's
+membership or order.
+
 Because a layer can span several rows, a runner must read layer membership and order from the
 layout's logical layers, not by grouping nodes on their y coordinate.
 

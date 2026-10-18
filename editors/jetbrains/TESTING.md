@@ -56,13 +56,21 @@ you have the plugin already.
 | Ctrl/Cmd + scroll | Zoom about the cursor |
 | Scroll / Shift + scroll | Pan vertically / horizontally |
 | Drag | Pan |
-| Toolbar | Zoom in/out, Fit to Window, Actual Size, Show External References, Show Owners as Badges, Focus on Selection, Reload |
+| Arrow keys (graph focused) | Move the selection to the nearest node that way, selecting its YAML |
+| Enter / Escape | Select the YAML and focus the editor / deselect |
+| + / − / 0 | Zoom in / zoom out / fit |
+| Toolbar | Zoom in/out, Fit to Window, Actual Size, Show External References, Show Owners as Badges, Group by System, Focus on Selection, Show Outline, Reload |
 | **Focus on Selection** on | Draw only the selected entity and what it is joined to, laid out afresh; the focus follows each click, Find and caret move |
+| **Group by System** on | Each System is a box around the entities that are part of it; the `partOf` edges into the box are not drawn |
+| **Show Outline** on | The catalog as a tree of kind, entity and relations; selecting a row selects its YAML |
+| Click the problems warning | List every problem; picking one moves the caret to it |
 
 Edge labels appear above roughly 75% zoom and are hidden below it, on purpose. Edges are coloured
 by relation, with inverse pairs (`childOf`/`parentOf`) sharing a colour, and the legend lists the
 relations drawn. With **Show Owners as Badges** on (the default) each entity's owner is a pill under its
 subtitle rather than an `ownedBy` edge, and a placeholder that was only an owner is not drawn.
+Edges are routed through the gaps in the rows they cross rather than over the nodes there, edges
+within one row arc over it, and a row wider than about 1200px wraps onto several.
 
 ## Reporting a problem
 

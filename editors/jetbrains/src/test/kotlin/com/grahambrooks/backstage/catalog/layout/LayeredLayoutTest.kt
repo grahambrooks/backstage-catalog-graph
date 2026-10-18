@@ -115,4 +115,38 @@ class LayeredLayoutTest {
         val placed = LayeredLayout(sizer = { _ -> 100.0 to 50.0 }).layout(cyclic)
         assertEquals(cyclic.nodes.keys, placed.nodes.keys)
     }
+
+    @Test
+    fun `Systems drawn as containers get boxes that hold their members and never overlap`() {
+        val large = CatalogGraphBuilder.build(Fixtures.loadExample("08-large-catalog"))
+        val clusters = com.grahambrooks.backstage.catalog.model.SystemClusters.of(large)
+        val boxed = LayeredLayout(sizer = { _ -> 100.0 to 50.0 }, clusters = clusters).layout(large)
+
+        val systems = clusters.values.toSet()
+        assertEquals(systems, boxed.clusters.map { it.system }.toSet())
+        for (box in boxed.clusters) {
+            val members = boxed.nodes.values.filter { clusters[it.node.ref] == box.system || it.node.ref == box.system }
+            members.forEach {
+                assertTrue(it.x >= box.x && it.right <= box.right && it.y >= box.y && it.bottom <= box.bottom, "${it.node.title} outside ${box.system}")
+            }
+            val others = boxed.nodes.values - members.toSet()
+            others.forEach {
+                val overlaps = it.x < box.right && it.right > box.x && it.y < box.bottom && it.bottom > box.y
+                assertTrue(!overlaps, "${it.node.title} intrudes on ${box.system}")
+            }
+        }
+        boxed.clusters.zipWithNext { left, right -> assertTrue(left.right <= right.x) }
+        assertEquals(LayeredLayout(sizer = { _ -> 100.0 to 50.0 }).layout(large).layers, boxed.layers)
+    }
+
+    @Test
+    fun `a row wider than the limit wraps into balanced rows and keeps its layer`() {
+        val large = CatalogGraphBuilder.build(Fixtures.loadExample("08-large-catalog"))
+        val wrapped = LayeredLayout(sizer = { _ -> 100.0 to 50.0 }, maxRowWidth = 700.0).layout(large)
+        val rows = wrapped.nodes.values.groupBy { it.y }.values
+        rows.forEach { row ->
+            assertTrue(row.size * 100 + (row.size - 1) * 32 <= 700 || row.size == 1, "row of ${row.size} too wide")
+        }
+        assertEquals(LayeredLayout(sizer = { _ -> 100.0 to 50.0 }).layout(large).layers, wrapped.layers)
+    }
 }

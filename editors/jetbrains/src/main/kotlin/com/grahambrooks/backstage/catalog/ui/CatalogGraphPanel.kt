@@ -6,7 +6,13 @@ import com.grahambrooks.backstage.catalog.model.CatalogNode
 import com.grahambrooks.backstage.catalog.model.EntityRef
 import com.grahambrooks.backstage.catalog.model.Focus
 import com.grahambrooks.backstage.catalog.model.OwnerBadges
+import com.grahambrooks.backstage.catalog.model.RelationType
+import com.grahambrooks.backstage.catalog.model.SystemClusters
+import com.grahambrooks.backstage.catalog.layout.ClusterBox
+import com.grahambrooks.backstage.catalog.layout.Direction
+import com.grahambrooks.backstage.catalog.layout.EdgeRouter
 import com.grahambrooks.backstage.catalog.layout.GraphLayout
+import com.grahambrooks.backstage.catalog.layout.Navigation
 import com.grahambrooks.backstage.catalog.layout.LayeredLayout
 import com.grahambrooks.backstage.catalog.layout.NodeBounds
 import com.intellij.ui.components.JBPanel
@@ -22,6 +28,8 @@ import java.awt.Graphics2D
 import java.awt.RenderingHints
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
+import java.awt.event.KeyAdapter
+import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseWheelEvent
@@ -86,6 +94,11 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
     private var showExternal: Boolean = true
     private var ownersAsBadges: Boolean = true
     private var focusMode: Boolean = false
+    private var groupBySystem: Boolean = false
+
+    /** Each entity's containing System while [groupBySystem] is on; see [SystemClusters]. */
+    private var clusters: Map<EntityRef, EntityRef> = emptyMap()
+    private var router: EdgeRouter = EdgeRouter(GraphLayout.EMPTY)
 
     /** Set when a fit was asked for before the panel had a size to fit into. */
     private var fitPending: Boolean = false
@@ -102,7 +115,9 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         preferredSize = Dimension(720, 520)
         minimumSize = Dimension(0, 0)
         toolTipText = ""
+        isFocusable = true
         installMouseHandlers()
+        installKeyHandlers()
         addComponentListener(object : ComponentAdapter() {
             override fun componentResized(event: ComponentEvent) {
                 if (fitPending) fitToWindow() else clampOrigin()
@@ -135,6 +150,9 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
 
     fun isShowingExternal(): Boolean = showExternal
 
+    /** The graph after the external toggle only -- what the outline lists. */
+    fun visibleEntities(): CatalogGraph = visibleGraph()
+
     fun setOwnersAsBadges(badges: Boolean) {
         if (ownersAsBadges == badges) return
         ownersAsBadges = badges
@@ -157,6 +175,20 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
     }
 
     fun isFocusMode(): Boolean = focusMode
+
+    /**
+     * With grouping on, each System is drawn as a box around the entities that are part of it,
+     * and the `partOf` edges the box already expresses are not drawn.
+     */
+    fun setGroupBySystem(on: Boolean) {
+        if (groupBySystem == on) return
+        groupBySystem = on
+        rebuildLayout()
+        fitToWindow()
+        repaint()
+    }
+
+    fun isGroupingBySystem(): Boolean = groupBySystem
 
     fun zoomBy(factor: Double) {
         zoomAround(factor, Point2D.Double(width / 2.0, height / 2.0))
@@ -239,10 +271,12 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
             Focus.around(unfocused, ref, owned = owners.filterValues { list -> list.any { it.ref == ref } }.keys)
         } ?: unfocused
 
+        clusters = if (groupBySystem) SystemClusters.of(unfocused) else emptyMap()
+
         val metrics = getFontMetrics(titleFont())
         val subMetrics = getFontMetrics(subtitleFont())
         val badgeMetrics = getFontMetrics(labelFont())
-        val engine = LayeredLayout(sizer = { node ->
+        val engine = LayeredLayout(maxRowWidth = MAX_ROW_WIDTH, clusters = clusters, sizer = { node ->
             val titleWidth = metrics.stringWidth(node.title).toDouble()
             val subtitleWidth = subMetrics.stringWidth(subtitleOf(node)).toDouble()
             val badge = badgeText(node.ref)
@@ -253,6 +287,7 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         })
         fullLayout = engine.layout(unfocused)
         layout = if (focus == null) fullLayout else engine.layout(drawnGraph)
+        router = EdgeRouter(layout)
         onLayoutChanged?.invoke()
     }
 
@@ -293,7 +328,12 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
 
             g2.transform(viewTransform())
 
-            for (edge in drawnGraph.edges) paintEdge(g2, edge)
+            for (box in layout.clusters) paintCluster(g2, box)
+            for (edge in drawnGraph.edges) {
+                // Inside a System's box, an edge to that System says what the box already does.
+                val contained = edge.type == RelationType.PART_OF && clusters[edge.from] == edge.to
+                if (!contained) paintEdge(g2, edge)
+            }
             for (bounds in layout.nodes.values) paintNode(g2, bounds)
         } finally {
             g2.dispose()
@@ -439,40 +479,53 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
             BasicStroke(1.5f + emphasis, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)
         }
 
-        val (start, end) = anchors(from, to)
-        val curve = CubicCurve2D.Double(
-            start.x, start.y,
-            start.x, start.y + (end.y - start.y) * CURVE_TENSION,
-            end.x, end.y - (end.y - start.y) * CURVE_TENSION,
-            end.x, end.y,
-        )
-        g2.draw(curve)
-        paintArrowHead(g2, curve)
+        val curves = curvesOf(router.route(from, to))
+        curves.forEach { g2.draw(it) }
+        paintArrowHead(g2, curves.last())
 
         if (scale >= LABEL_SCALE_THRESHOLD) {
-            paintEdgeLabel(g2, curve, edge)
+            paintEdgeLabel(g2, curves[curves.size / 2], edge)
         }
 
         g2.composite = composite
     }
 
     /**
-     * Picks which side of each node the edge leaves and enters. Relations run both up (a
-     * component to its system) and down (a component to its owning group), so anchoring purely
-     * bottom-to-top would draw half the edges backwards through their own nodes.
+     * The drawn shape of a route. Between rows, one cubic per leg with vertical tangents at every
+     * point, so the edge leaves and enters nodes straight and passes through a row's gap
+     * upright. Within a row, a single arc over it, rising further the further apart its ends are.
      */
-    private fun anchors(from: NodeBounds, to: NodeBounds): Pair<Point2D.Double, Point2D.Double> {
-        val sameLayer = kotlin.math.abs(from.centerY - to.centerY) < 1.0
-        return when {
-            sameLayer && to.centerX >= from.centerX ->
-                Point2D.Double(from.right, from.centerY) to Point2D.Double(to.x, to.centerY)
-            sameLayer ->
-                Point2D.Double(from.x, from.centerY) to Point2D.Double(to.right, to.centerY)
-            to.centerY > from.centerY ->
-                Point2D.Double(from.centerX, from.bottom) to Point2D.Double(to.centerX, to.y)
-            else ->
-                Point2D.Double(from.centerX, from.y) to Point2D.Double(to.centerX, to.bottom)
+    private fun curvesOf(route: com.grahambrooks.backstage.catalog.layout.Route): List<CubicCurve2D.Double> {
+        val points = route.points
+        if (route.sameRow) {
+            val (start, end) = points.first() to points.last()
+            val lift = (ARC_LIFT + kotlin.math.abs(end.x - start.x) * 0.12).coerceAtMost(MAX_ARC_LIFT)
+            return listOf(
+                CubicCurve2D.Double(start.x, start.y, start.x, start.y - lift, end.x, end.y - lift, end.x, end.y),
+            )
         }
+        return points.zipWithNext { p, q ->
+            val dy = (q.y - p.y) * CURVE_TENSION
+            CubicCurve2D.Double(p.x, p.y, p.x, p.y + dy, q.x, q.y - dy, q.x, q.y)
+        }
+    }
+
+    /**
+     * A System drawn as a container: a lightly tinted box behind its header node and members,
+     * dashed when the System is a placeholder declared elsewhere.
+     */
+    private fun paintCluster(g2: Graphics2D, box: ClusterBox) {
+        val system = graph.nodes[box.system] ?: return
+        val shape = RoundRectangle2D.Double(box.x, box.y, box.width, box.height, CLUSTER_ARC, CLUSTER_ARC)
+        g2.color = CatalogPalette.tintFor(system.kind, 16)
+        g2.fill(shape)
+        g2.color = CatalogPalette.tintFor(system.kind, 110)
+        g2.stroke = if (system.external) {
+            BasicStroke(1.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 4f, EXTERNAL_DASH, 0f)
+        } else {
+            BasicStroke(1.2f)
+        }
+        g2.draw(shape)
     }
 
     private fun paintArrowHead(g2: Graphics2D, curve: CubicCurve2D.Double) {
@@ -522,6 +575,40 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
     }
 
     // --- Interaction ----------------------------------------------------------------------
+
+    /**
+     * Arrows move the selection to the nearest node that way, selecting its YAML as a click
+     * does; Enter also moves focus to the editor; Escape deselects. Plus, minus and 0 zoom in,
+     * zoom out and fit.
+     */
+    private fun installKeyHandlers() {
+        addKeyListener(object : KeyAdapter() {
+            override fun keyPressed(event: KeyEvent) {
+                val direction = when (event.keyCode) {
+                    KeyEvent.VK_LEFT -> Direction.LEFT
+                    KeyEvent.VK_RIGHT -> Direction.RIGHT
+                    KeyEvent.VK_UP -> Direction.UP
+                    KeyEvent.VK_DOWN -> Direction.DOWN
+                    else -> null
+                }
+                when {
+                    direction != null -> {
+                        val next = Navigation.step(layout, selected, direction) ?: return
+                        reveal(next, zoomToRead = false)
+                        graph.nodes[next]?.takeIf { !it.external }?.let { onNavigate?.invoke(it, false) }
+                    }
+                    event.keyCode == KeyEvent.VK_ENTER ->
+                        selected?.let { graph.nodes[it] }?.takeIf { !it.external }?.let { onNavigate?.invoke(it, true) }
+                    event.keyCode == KeyEvent.VK_ESCAPE -> select(null)
+                    event.keyChar == '+' || event.keyChar == '=' -> zoomBy(ZOOM_STEP)
+                    event.keyChar == '-' -> zoomBy(1 / ZOOM_STEP)
+                    event.keyChar == '0' -> fitToWindow()
+                    else -> return
+                }
+                event.consume()
+            }
+        })
+    }
 
     private fun installMouseHandlers() {
         val handler = object : MouseAdapter() {
@@ -708,6 +795,11 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         const val TEXT_INSET = 12.0
         const val ARC = 10.0
         const val CURVE_TENSION = 0.45
+        const val ARC_LIFT = 26.0
+        const val MAX_ARC_LIFT = 90.0
+        const val CLUSTER_ARC = 18.0
+        /** Wider rows wrap onto several (graph pixels, before zoom); see LayeredLayout.wrap. */
+        const val MAX_ROW_WIDTH = 1200.0
         const val ARROW_LENGTH = 9.0
         const val ARROW_SPREAD = 0.42
         const val ZOOM_STEP = 1.12

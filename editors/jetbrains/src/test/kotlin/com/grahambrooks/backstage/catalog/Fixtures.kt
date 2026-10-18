@@ -11,10 +11,20 @@ import org.yaml.snakeyaml.Yaml
  */
 object Fixtures {
 
-    fun load(name: String): List<RawDocument> {
-        val text = requireNotNull(javaClass.classLoader.getResourceAsStream("fixtures/$name")) {
+    fun load(name: String): List<RawDocument> = parse(
+        requireNotNull(javaClass.classLoader.getResourceAsStream("fixtures/$name")) {
             "Missing fixture: fixtures/$name"
-        }.bufferedReader().readText()
+        }.bufferedReader().readText(),
+    )
+
+    /** One of the shared `examples/`, found through the `repo.root` property Gradle passes. */
+    fun loadExample(name: String): List<RawDocument> = parse(
+        java.nio.file.Path.of(System.getProperty("repo.root", "../.."))
+            .resolve("examples").resolve(name).resolve("catalog-info.yaml")
+            .toFile().readText(),
+    )
+
+    private fun parse(text: String): List<RawDocument> {
 
         // Offsets are approximated by document start, which is all the model layer uses them for.
         var offset = 0

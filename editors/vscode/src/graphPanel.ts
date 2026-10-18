@@ -202,16 +202,23 @@ export class CatalogGraphPanel {
     <label id="owners-toggle" title="Show each entity's owner as a badge instead of drawing an ownedBy edge to it">
       <input type="checkbox" id="owners" checked> Owners as badges
     </label>
+    <label id="group-toggle" title="Draw each System as a box around the entities that are part of it">
+      <input type="checkbox" id="group"> Group by System
+    </label>
     <label id="focus-toggle" title="Draw only the selected entity and what it is joined to; the focus follows the selection">
       <input type="checkbox" id="focus"> Focus
     </label>
+    <label title="Show the catalog as a tree of kind, entity and relations instead of a graph">
+      <input type="checkbox" id="outline-toggle"> Outline
+    </label>
     <span class="separator"></span>
     <button id="reload" title="Reload graph">Reload</button>
-    <span id="problems" hidden></span>
+    <span id="problems-anchor"><span id="problems" hidden></span><div id="problem-list" hidden></div></span>
     <span id="find-status"></span>
     <input type="search" id="find" placeholder="Find entity" title="Enter for next match, Shift+Enter for previous, Escape to clear" size="14">
   </header>
-  <main id="canvas"><svg id="graph" xmlns="http://www.w3.org/2000/svg"></svg></main>
+  <main id="canvas" tabindex="0"><svg id="graph" xmlns="http://www.w3.org/2000/svg"></svg></main>
+  <main id="outline" hidden></main>
   <footer id="status-bar">
     <span id="legend"></span>
     <span id="status"></span>
@@ -294,12 +301,39 @@ const STYLES = `
   }
   #find:focus { outline: 1px solid var(--accent); outline-offset: -1px; }
   #find-status { color: var(--vscode-descriptionForeground); margin-left: auto; }
+  #problems-anchor { position: relative; margin-left: auto; max-width: 50%; display: flex; }
+  #problem-list {
+    position: absolute; top: 100%; right: 0; z-index: 10; min-width: 280px; max-height: 50vh;
+    overflow: auto; display: flex; flex-direction: column; padding: 4px;
+    background: var(--vscode-editorWidget-background); border: 1px solid var(--node-border);
+    box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.3));
+  }
+  #problem-list[hidden] { display: none; }
+  #problem-list button {
+    text-align: left; background: none; border: none; padding: 4px 8px; cursor: pointer;
+    color: var(--vscode-foreground); font-family: inherit; font-size: inherit;
+  }
+  #problem-list button:hover:enabled { background: var(--vscode-list-hoverBackground); }
+  #problem-list button:disabled { cursor: default; opacity: 0.6; }
   #problems {
     color: var(--vscode-editorWarning-foreground, #cca700);
-    margin-left: auto; cursor: help;
+    cursor: pointer;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 50%;
   }
   #canvas { flex: 1 1 auto; overflow: hidden; position: relative; }
+  #canvas:focus { outline: none; }
+  #canvas[hidden], #outline[hidden] { display: none; }
+  #outline { flex: 1 1 auto; overflow: auto; padding: 6px 12px; }
+  #outline summary { cursor: pointer; padding: 1px 0; }
+  #outline summary.section { font-weight: 600; }
+  #outline details.entity { margin-left: 16px; }
+  #outline details.entity.selected > summary { background: var(--vscode-list-inactiveSelectionBackground); }
+  #outline .relation { margin-left: 32px; padding: 1px 0; }
+  #outline .link:hover { background: var(--vscode-list-hoverBackground); }
+  #outline .muted { color: var(--vscode-descriptionForeground); }
+  #outline .external { font-style: italic; }
+  .cluster { stroke-width: 1.2; }
+  .cluster.external { stroke-dasharray: 5 4; }
   #graph { width: 100%; height: 100%; display: block; cursor: grab; }
   #graph.panning { cursor: grabbing; }
   .node { cursor: pointer; }

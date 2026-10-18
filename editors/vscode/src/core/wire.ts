@@ -27,14 +27,23 @@ export interface WireNode {
 export interface WireGraph {
   readonly nodes: readonly WireNode[];
   readonly edges: readonly CatalogEdge[];
-  readonly problems: readonly string[];
+  readonly problems: readonly WireProblem[];
+}
+
+/** A problem and where it is, so the problems list can move the caret to it. */
+export interface WireProblem {
+  readonly message: string;
+  readonly sourceOffset: number | null;
 }
 
 export function toWire(graph: CatalogGraph): WireGraph {
   return {
     nodes: [...graph.nodes.entries()].map(([key, node]) => toWireNode(key, node)),
     edges: graph.edges.map((edge) => ({ ...edge })),
-    problems: graph.problems.map((problem) => problem.message),
+    problems: graph.problems.map((problem) => ({
+      message: problem.message,
+      sourceOffset: problem.sourceOffset ?? null,
+    })),
   };
 }
 
@@ -74,7 +83,14 @@ export function fromWire(wire: WireGraph): CatalogGraph {
       definition: node.definition ?? undefined,
     });
   }
-  return { nodes, edges: wire.edges, problems: wire.problems.map((message) => ({ message })) };
+  return {
+    nodes,
+    edges: wire.edges,
+    problems: wire.problems.map((problem) => ({
+      message: problem.message,
+      sourceOffset: problem.sourceOffset ?? undefined,
+    })),
+  };
 }
 
 /** Splits the canonical `kind:namespace/name` produced by `formatRef`. */

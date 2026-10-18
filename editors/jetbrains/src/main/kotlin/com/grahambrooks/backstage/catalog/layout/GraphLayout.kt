@@ -31,12 +31,26 @@ data class GraphLayout(
      * conformance goldens record.
      */
     val layers: List<List<EntityRef>> = emptyList(),
+    /** One box per System drawn as a container, around its header node and its members. */
+    val clusters: List<ClusterBox> = emptyList(),
 ) {
     fun at(point: Pair<Double, Double>): NodeBounds? = nodes.values.firstOrNull { point in it }
 
     companion object {
         val EMPTY = GraphLayout(emptyMap(), 0.0, 0.0)
     }
+}
+
+/** A System drawn as a container, in graph coordinates. */
+data class ClusterBox(
+    val system: EntityRef,
+    val x: Double,
+    val y: Double,
+    val width: Double,
+    val height: Double,
+) {
+    val right: Double get() = x + width
+    val bottom: Double get() = y + height
 }
 
 /** How wide and tall a node should be drawn. Supplied by the UI so text measurement stays there. */

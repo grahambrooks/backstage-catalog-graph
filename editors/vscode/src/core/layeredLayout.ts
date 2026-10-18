@@ -20,9 +20,26 @@ export interface GraphLayout {
    * conformance goldens record.
    */
   readonly layers: readonly (readonly string[])[];
+  /** One box per System drawn as a container, around its header node and its members. */
+  readonly clusters: readonly ClusterBox[];
 }
 
-export const EMPTY_LAYOUT: GraphLayout = { nodes: new Map(), width: 0, height: 0, layers: [] };
+/** A System drawn as a container, in graph coordinates. */
+export interface ClusterBox {
+  readonly system: string;
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+export const EMPTY_LAYOUT: GraphLayout = {
+  nodes: new Map(),
+  width: 0,
+  height: 0,
+  layers: [],
+  clusters: [],
+};
 
 /** How wide and tall a node should be drawn. Supplied by the caller so measurement stays there. */
 export type NodeSizer = (node: CatalogNode) => { width: number; height: number };
@@ -33,6 +50,15 @@ export interface LayoutOptions {
   readonly margin?: number;
   readonly orderingSweeps?: number;
   readonly hierarchyGap?: number;
+  /** Rows wider than this wrap onto several; undefined never wraps. See `wrap`. */
+  readonly maxRowWidth?: number;
+  /**
+   * Entity key to the key of the System drawn as its container; absent or empty draws none.
+   * Presentation only, like the row splits -- the logical layers are unchanged.
+   */
+  readonly clusters?: ReadonlyMap<string, string>;
+  readonly clusterPadding?: number;
+  readonly clusterGap?: number;
 }
 
 export function centerX(bounds: NodeBounds): number {
@@ -90,47 +116,175 @@ export function layoutGraph(
   const margin = options.margin ?? 32;
   const orderingSweeps = options.orderingSweeps ?? 4;
   const hierarchyGap = options.hierarchyGap ?? 56;
+  const clusterPadding = options.clusterPadding ?? 14;
+  const clusterGap = options.clusterGap ?? 40;
+  const clusters = options.clusters ?? new Map<string, string>();
 
   const layers = orderLayers(layerNodes(graph), adjacencyOf(graph), orderingSweeps);
 
-  // Pack each row left to right, then centre the rows on a common axis.
-  const rows: NodeBounds[][] = [];
-  let y = margin;
-  let widest = 0;
-
-  for (const layer of layers) {
-    const split = hierarchyRows(layer, graph);
-    split.forEach((nodes, index) => {
-      let x = 0;
-      let tallest = 0;
-      const row: NodeBounds[] = [];
-      for (const node of nodes) {
-        const { width, height } = sizer(node);
-        row.push({ node, x, y, width, height });
-        x += width + horizontalGap;
-        tallest = Math.max(tallest, height);
-      }
-      widest = Math.max(widest, Math.max(0, x - horizontalGap));
-      rows.push(row);
-      y += tallest + (index < split.length - 1 ? hierarchyGap : verticalGap);
+  const sizes = new Map<string, { width: number; height: number }>();
+  for (const [key, node] of graph.nodes) {
+    sizes.set(key, sizer(node));
+  }
+  const size = (node: CatalogNode) => sizes.get(keyOf(node.ref))!;
+  const packedWidth = (nodes: readonly CatalogNode[]): number =>
+    nodes.length === 0
+      ? 0
+      : nodes.reduce((sum, node) => sum + size(node).width, 0) + horizontalGap * (nodes.length - 1);
+  const pack = (nodes: readonly CatalogNode[], startX: number, y: number): NodeBounds[] => {
+    let x = startX;
+    return nodes.map((node) => {
+      const { width, height } = size(node);
+      const bounds = { node, x, y, width, height };
+      x += width + horizontalGap;
+      return bounds;
     });
+  };
+
+  const systems = new Set([...clusters.values()].filter((system) => graph.nodes.has(system)));
+  const clusterOf = (node: CatalogNode): string | undefined => {
+    const key = keyOf(node.ref);
+    const system = clusters.get(key);
+    if (system !== undefined && systems.has(system)) {
+      return system;
+    }
+    return systems.has(key) ? key : undefined;
+  };
+  const columns = layers.flat().map((node) => keyOf(node.ref)).filter((key) => systems.has(key));
+
+  /**
+   * Splits a row wider than `maxRowWidth` into balanced rows, keeping its order. Off when
+   * Systems are drawn as containers: their columns already narrow each System, and wrapping
+   * inside a column would break the box.
+   */
+  const wrap = (row: CatalogNode[]): CatalogNode[][] => {
+    const limit = options.maxRowWidth;
+    if (limit === undefined || columns.length > 0 || row.length < 2) {
+      return [row];
+    }
+    const width = packedWidth(row);
+    if (width <= limit) {
+      return [row];
+    }
+    // Width alone underestimates: balanced chunks round up, so add rows until each one fits.
+    for (let count = Math.ceil(width / limit); ; count++) {
+      const parts = chunked(row, count);
+      if (count >= row.length || parts.every((part) => packedWidth(part) <= limit)) {
+        return parts;
+      }
+    }
+  };
+
+  const rows: { nodes: CatalogNode[]; gapAfter: number }[] = [];
+  for (const layer of layers) {
+    const split = hierarchyRows(layer, graph).flatMap(wrap);
+    split.forEach((nodes, index) =>
+      rows.push({ nodes, gapAfter: index < split.length - 1 ? hierarchyGap : verticalGap }),
+    );
   }
 
+  // Place every row. Without containers each is packed and centred on a common axis. With
+  // containers, each System that has members gets a column, in the order the Systems sit in
+  // their layer, and every row from the first containing a member to the last puts that
+  // System's nodes in its column -- the header in the System row, members below -- so the boxes
+  // never overlap. Nodes outside any System share a column on the right. Rows above and below
+  // that span are centred as usual.
+  const clusteredRows = rows
+    .map((row, index) => (row.nodes.some((node) => clusterOf(node) !== undefined) ? index : -1))
+    .filter((index) => index >= 0);
+  const spanStart = clusteredRows.length > 0 ? clusteredRows[0] : 0;
+  const spanEnd = clusteredRows.length > 0 ? clusteredRows[clusteredRows.length - 1] : -1;
+  const inSpan = (index: number) => index >= spanStart && index <= spanEnd;
+  const spanRows = rows.filter((_, index) => inSpan(index));
+
+  const columnWidth = new Map(
+    columns.map((system) => [
+      system,
+      Math.max(...spanRows.map((row) => packedWidth(row.nodes.filter((n) => clusterOf(n) === system)))),
+    ]),
+  );
+  const freeWidth = Math.max(
+    0,
+    ...spanRows.map((row) => packedWidth(row.nodes.filter((n) => clusterOf(n) === undefined))),
+  );
+
+  const columnStart = new Map<string, number>();
+  let cursor = 0;
+  for (const system of columns) {
+    columnStart.set(system, cursor);
+    cursor += columnWidth.get(system)! + clusterPadding * 2 + clusterGap;
+  }
+  const freeStart = cursor;
+  const spanWidth =
+    columns.length === 0 ? 0 : freeWidth > 0 ? freeStart + freeWidth : cursor - clusterGap;
+
+  const placed: NodeBounds[][] = [];
+  let y = margin;
+  let widest = spanWidth;
+  rows.forEach((row, index) => {
+    if (inSpan(index)) {
+      const bounds: NodeBounds[] = [];
+      for (const system of columns) {
+        const group = row.nodes.filter((node) => clusterOf(node) === system);
+        const inner = columnWidth.get(system)!;
+        bounds.push(
+          ...pack(group, columnStart.get(system)! + clusterPadding + (inner - packedWidth(group)) / 2, y),
+        );
+      }
+      const free = row.nodes.filter((node) => clusterOf(node) === undefined);
+      bounds.push(...pack(free, freeStart + (freeWidth - packedWidth(free)) / 2, y));
+      placed.push(bounds);
+    } else {
+      placed.push(pack(row.nodes, 0, y));
+      widest = Math.max(widest, packedWidth(row.nodes));
+    }
+    y += Math.max(0, ...row.nodes.map((node) => size(node).height)) + row.gapAfter;
+  });
+
+  // Rows outside the container span are centred; rows inside it already use its columns.
+  const spanOffset = margin + (widest - spanWidth) / 2;
   const positioned = new Map<string, NodeBounds>();
-  for (const row of rows) {
-    const rowWidth = row.length > 0 ? right(row[row.length - 1]) : 0;
-    const offset = margin + (widest - rowWidth) / 2;
+  placed.forEach((row, index) => {
+    const offset = inSpan(index) ? spanOffset : margin + (widest - packedWidth(rows[index].nodes)) / 2;
     for (const bounds of row) {
       positioned.set(keyOf(bounds.node.ref), { ...bounds, x: bounds.x + offset });
     }
-  }
+  });
+
+  const boxes: ClusterBox[] = columns.map((system) => {
+    const members = [...positioned.values()].filter((bounds) => clusterOf(bounds.node) === system);
+    const top = Math.min(...members.map((bounds) => bounds.y)) - clusterPadding;
+    const bottomEdge = Math.max(...members.map((bounds) => bottom(bounds))) + clusterPadding;
+    return {
+      system,
+      x: columnStart.get(system)! + spanOffset,
+      y: top,
+      width: columnWidth.get(system)! + clusterPadding * 2,
+      height: bottomEdge - top,
+    };
+  });
 
   return {
     nodes: positioned,
     width: widest + margin * 2,
     height: Math.max(0, y - verticalGap + margin),
     layers: layers.map((layer) => layer.map((node) => keyOf(node.ref))),
+    clusters: boxes,
   };
+}
+
+/** `row` in `count` consecutive chunks whose sizes differ by at most one, larger first. */
+function chunked<T>(row: readonly T[], count: number): T[][] {
+  const base = Math.floor(row.length / count);
+  const extra = row.length % count;
+  const parts: T[][] = [];
+  let start = 0;
+  for (let index = 0; index < count; index++) {
+    const size = base + (index < extra ? 1 : 0);
+    parts.push(row.slice(start, start + size));
+    start += size;
+  }
+  return parts;
 }
 
 /**
