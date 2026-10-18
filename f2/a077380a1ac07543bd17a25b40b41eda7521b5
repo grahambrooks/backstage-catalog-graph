@@ -1,0 +1,53 @@
+editors/vscode/src/webview/main.ts
+  s_ccff39c7afa1ba::t_84d7d72118877e 20
+  s_ccff39c7afa1ba::t_d92f169302ec2a 19,22,37-44,54-55,75,83-87,92-97,107-110,135-138,163-171,173,229-231,234,238-242,280-284,305-345,384-385,531-534,536-540,545-552,733-736,762-766
+editors/jetbrains/src/test/kotlin/com/grahambrooks/backstage/catalog/model/OwnerBadgesTest.kt
+  s_ccff39c7afa1ba::t_72ded6952ee775 1-69
+editors/vscode/src/test/core.test.ts
+  s_ccff39c7afa1ba::t_47d49bb54388a7 8,164-215
+  s_ccff39c7afa1ba::t_4010788855937e 216
+editors/vscode/src/core/index.ts
+  s_ccff39c7afa1ba::t_47d49bb54388a7 15
+editors/vscode/src/graphPanel.ts
+  s_ccff39c7afa1ba::t_84d7d72118877e 131,141-146,180-182,284,286,292-298,306-307
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/model/OwnerBadges.kt
+  s_ccff39c7afa1ba::t_86e6de027cccd7 1-41
+editors/vscode/src/core/ownerBadges.ts
+  s_ccff39c7afa1ba::t_2a4550d89bbe3b 1-20,22-25,27-32,34-45
+  s_ccff39c7afa1ba::t_47d49bb54388a7 21,26,33
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogPalette.kt
+  s_ccff39c7afa1ba::t_ead5ccbe161c0e 4,9,30-56,71
+  s_ccff39c7afa1ba::t_8aed79edacb09b 72
+editors/vscode/src/webview/palette.ts
+  s_ccff39c7afa1ba::t_d92f169302ec2a 35-72,90-92
+  s_ccff39c7afa1ba::t_fde5bc6f03b33d 34,93-94
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphView.kt
+  s_ccff39c7afa1ba::t_a166f68f22df9c 6,75,81-89,128-139,151-154,157,181-194,205-206
+editors/vscode/package.json
+  s_ccff39c7afa1ba::t_84d7d72118877e 79-83
+editors/jetbrains/TESTING.md
+  s_ccff39c7afa1ba::t_98cf4394be9e63 57,59-62
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogGraphPanel.kt
+  s_ccff39c7afa1ba::t_ff7037c3dd729b 29,62-64,172-173,345,575
+  s_ccff39c7afa1ba::t_079442dbd09fb0 7,58-61,65,77,127-135,170-171,174-175,178,182-184,186,188,191-193,228,315-316,320-344,346-355,365-367,369,371,576-577,623-629,647
+editors/vscode/README.md
+  s_ccff39c7afa1ba::t_98cf4394be9e63 31,33-36,48
+CLAUDE.md
+  s_ccff39c7afa1ba::t_a2f5919b88070b 60,74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f2a077380a1ac07543bd17a25b40b41eda7521b5",
+  "prompts": {},
+  "sessions": {
+    "s_ccff39c7afa1ba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "077998fa-6922-450c-91cb-7db0d67c3e3c",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
