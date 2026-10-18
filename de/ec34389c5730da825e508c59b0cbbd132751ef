@@ -1,0 +1,25 @@
+CLAUDE.md
+  s_ccff39c7afa1ba::t_d422f07c0f0cc9 113-114,126-128
+ROADMAP.md
+  s_ccff39c7afa1ba::t_e2bc226004d38c 1,3,5,7-9,11-13,15,17-18,20-25,27-29,31,33-34,36-41,43,45,47
+  s_ccff39c7afa1ba::t_5028c130f824f6 46
+README.md
+  s_ccff39c7afa1ba::t_d422f07c0f0cc9 18-19,34-36,64-65,82,85-86,90-94,104,111-117,141-144
+  s_ccff39c7afa1ba::t_2669f7175805d4 17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "deec34389c5730da825e508c59b0cbbd132751ef",
+  "prompts": {},
+  "sessions": {
+    "s_ccff39c7afa1ba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "077998fa-6922-450c-91cb-7db0d67c3e3c",
+        "model": "unknown"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
