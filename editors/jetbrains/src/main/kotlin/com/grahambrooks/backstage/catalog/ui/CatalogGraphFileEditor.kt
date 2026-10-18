@@ -146,13 +146,14 @@ class CatalogGraphFileEditor(
     /**
      * Selects the YAML that defines [node], with the caret at its top so the caret still sits
      * inside that entity and the graph keeps it selected. Falls back to placing the caret at the
-     * document when there is no definition range.
+     * document when there is no definition range. Unless [focus], keyboard focus stays in the
+     * graph, so a single click can select without taking the user out of it.
      */
-    private fun navigateTo(node: CatalogNode) {
+    private fun navigateTo(node: CatalogNode, focus: Boolean) {
         val definition = node.definition
         val offset = definition?.start ?: node.sourceOffset ?: return
         val editor = FileEditorManager.getInstance(project)
-            .openTextEditor(OpenFileDescriptor(project, file, offset), true) ?: return
+            .openTextEditor(OpenFileDescriptor(project, file, offset), focus) ?: return
         // The descriptor has already put the caret at the start; selecting leaves it there.
         definition?.let { editor.selectionModel.setSelection(it.start, it.end) }
     }

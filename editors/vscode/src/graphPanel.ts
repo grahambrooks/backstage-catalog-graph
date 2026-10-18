@@ -100,7 +100,11 @@ export class CatalogGraphPanel {
       return;
     }
     if (message.command === 'navigate' && typeof message.offset === 'number') {
-      void this.revealAt(message.offset, typeof message.end === 'number' ? message.end : undefined);
+      void this.revealAt(
+        message.offset,
+        typeof message.end === 'number' ? message.end : undefined,
+        message.focus === true,
+      );
     }
     if (message.command === 'reload') {
       this.scheduleRebuild(0);
@@ -110,16 +114,17 @@ export class CatalogGraphPanel {
   /**
    * Selects the YAML that defines the entity, in the editor column the graph came from. The
    * caret goes at the top of the selection, so it still sits inside that entity and the graph
-   * keeps it selected. Without an end, only the caret moves.
+   * keeps it selected. Without an end, only the caret moves. Unless `focus`, keyboard focus stays
+   * in the graph, so a single click can select without taking the user out of it.
    */
-  private async revealAt(offset: number, end?: number): Promise<void> {
+  private async revealAt(offset: number, end?: number, focus = true): Promise<void> {
     const length = this.document.getText().length;
     const clamp = (value: number) => Math.max(0, Math.min(value, length));
     const position = this.document.positionAt(clamp(offset));
     const last = this.document.positionAt(clamp(end ?? offset));
     const editor = await vscode.window.showTextDocument(this.document, {
       viewColumn: vscode.ViewColumn.One,
-      preserveFocus: false,
+      preserveFocus: !focus,
     });
     // Anchor at the end and the active end at the start: the caret is the active end.
     editor.selection = new vscode.Selection(last, position);

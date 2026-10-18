@@ -438,17 +438,18 @@ function renderNode(bounds: NodeBounds): SVGGElement {
   tooltip.textContent = tooltipFor(node);
   group.appendChild(tooltip);
 
+  // A click selects the entity here and its YAML in the editor, leaving focus on the graph; a
+  // double-click also moves focus to the editor. `detail` is the browser's click count, which
+  // survives the redraw a click causes in focus mode, where a `dblclick` listener would not.
   group.addEventListener('click', (event) => {
     event.stopPropagation();
-    select(selected === keyFor(bounds) ? undefined : keyFor(bounds));
-  });
-  group.addEventListener('dblclick', (event) => {
-    event.stopPropagation();
+    select(keyFor(bounds));
     if (node.sourceOffset !== undefined) {
       vscode.postMessage({
         command: 'navigate',
         offset: node.definition?.start ?? node.sourceOffset,
         end: node.definition?.end,
+        focus: event.detail >= 2,
       });
     }
   });
@@ -846,22 +847,31 @@ svg.addEventListener('pointerdown', (event: PointerEvent) => {
     return;
   }
   dragged = false;
+  // No pointer capture yet: Chromium sends the click that follows a captured press to the
+  // capturing element, so capturing here would steal every click from the nodes.
   dragAnchor = {
     x: event.clientX,
     y: event.clientY,
     originX: viewport.originX,
     originY: viewport.originY,
   };
-  svg.setPointerCapture(event.pointerId);
-  svg.classList.add('panning');
 });
 
 svg.addEventListener('pointermove', (event: PointerEvent) => {
   if (!dragAnchor) {
     return;
   }
-  if (Math.abs(event.clientX - dragAnchor.x) + Math.abs(event.clientY - dragAnchor.y) > DRAG_SLOP) {
+  if (
+    !dragged &&
+    Math.abs(event.clientX - dragAnchor.x) + Math.abs(event.clientY - dragAnchor.y) > DRAG_SLOP
+  ) {
+    // Now it is a pan: capture, so the drag keeps tracking outside the canvas.
     dragged = true;
+    svg.setPointerCapture(event.pointerId);
+    svg.classList.add('panning');
+  }
+  if (!dragged) {
+    return;
   }
   viewport.originX = dragAnchor.originX + (event.clientX - dragAnchor.x);
   viewport.originY = dragAnchor.originY + (event.clientY - dragAnchor.y);
@@ -871,7 +881,9 @@ svg.addEventListener('pointermove', (event: PointerEvent) => {
 for (const type of ['pointerup', 'pointercancel'] as const) {
   svg.addEventListener(type, (event: PointerEvent) => {
     dragAnchor = undefined;
-    svg.releasePointerCapture(event.pointerId);
+    if (svg.hasPointerCapture(event.pointerId)) {
+      svg.releasePointerCapture(event.pointerId);
+    }
     svg.classList.remove('panning');
   });
 }

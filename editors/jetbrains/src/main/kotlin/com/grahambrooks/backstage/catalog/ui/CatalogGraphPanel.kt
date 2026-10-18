@@ -49,8 +49,11 @@ import kotlin.math.sin
  */
 class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
 
-    /** Invoked when the user double-clicks a node declared in the file. */
-    var onNavigate: ((CatalogNode) -> Unit)? = null
+    /**
+     * Invoked when the user clicks a node declared in the file, to select its YAML. `focus` is
+     * true for a double-click, which also moves keyboard focus to the editor.
+     */
+    var onNavigate: ((node: CatalogNode, focus: Boolean) -> Unit)? = null
 
     /** Invoked whenever the selection changes, including on deselect. */
     var onSelectionChanged: ((CatalogNode?) -> Unit)? = null
@@ -546,12 +549,15 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
 
             override fun mouseClicked(event: MouseEvent) {
                 if (!SwingUtilities.isLeftMouseButton(event)) return
-                val hit = nodeAt(event)
-                if (event.clickCount == 2 && hit != null && !hit.node.external) {
-                    onNavigate?.invoke(hit.node)
-                    return
+                // The second click of a double-click acts on what the first selected: in focus
+                // mode the first click re-lays the graph out, so another node may now be under
+                // the pointer.
+                val node = if (event.clickCount >= 2) {
+                    selected?.let { graph.nodes[it] }
+                } else {
+                    nodeAt(event)?.node.also { select(it?.ref) }
                 }
-                select(hit?.node?.ref)
+                if (node != null && !node.external) onNavigate?.invoke(node, event.clickCount >= 2)
             }
 
             override fun mouseMoved(event: MouseEvent) {

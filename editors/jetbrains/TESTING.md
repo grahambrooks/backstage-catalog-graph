@@ -48,8 +48,8 @@ you have the plugin already.
 
 | | |
 |---|---|
-| Click a node | Select it and dim everything outside its neighbourhood |
-| Double-click a node | Select the YAML that defines that entity, caret at its top |
+| Click a node | Select it, dim everything outside its neighbourhood, and select the YAML that defines it; focus stays in the graph |
+| Double-click a node | As a click, and move keyboard focus to the editor |
 | Hover a node | Details, and whether it is declared here or elsewhere |
 | Move the caret into an entity's YAML | Select it in the graph, panning to it if it is off screen (zoom is kept) |
 | Type in **Find entity** (Ctrl/Cmd+F) | Select and reveal the first entity whose title or reference matches; Enter / Shift+Enter for next / previous, Escape to clear |
