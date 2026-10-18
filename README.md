@@ -14,7 +14,9 @@ file defines and what it assumes exists.
 |---|---|---|
 | **VS Code** — and Cursor, Windsurf, VSCodium, Theia, Codespaces | Shipped | [`editors/vscode`](editors/vscode) |
 | **JetBrains** — IDEA, PyCharm, GoLand, RustRover, … | Shipped | [`editors/jetbrains`](editors/jetbrains) |
-| Vim, Neovim, Helix, Emacs, Sublime, Zed | Planned, via a language server | [ROADMAP.md](ROADMAP.md) |
+
+No other editors are planned, and nothing is on a public marketplace yet — see
+[ROADMAP.md](ROADMAP.md).
 
 ## Layout
 
@@ -29,8 +31,9 @@ editors/
   jetbrains/          Kotlin core + Swing canvas, split editor
   vscode/             TypeScript core + SVG webview, preview to the side
 
-examples/             ten scenarios, doubling as the manual test plan
-ROADMAP.md            which editors, in what order, and why
+examples/             eleven scenarios, doubling as the manual test plan
+Makefile              build, package and launch either editor locally (`make` lists targets)
+ROADMAP.md            what is deferred, what is not planned, and why
 ```
 
 ## One contract, an implementation per editor
@@ -56,12 +59,10 @@ cd editors/jetbrains && ./gradlew test -Dconformance.update=true
 cd editors/vscode    && npm test
 ```
 
-If you are adding a third editor, [ROADMAP.md](ROADMAP.md#adding-an-editor) has the order to do
-it in — pass the corpus before writing any rendering code.
-
 ## Building
 
-Neither editor needs the other's toolchain.
+`make package` builds both editors' packages into `dist/`; `make` lists every target. Neither
+editor needs the other's toolchain, and the commands underneath are:
 
 ```bash
 # VS Code — needs Node
@@ -78,17 +79,19 @@ cd editors/jetbrains
 
 ## Trying it
 
-[`examples/`](examples/README.md) is a manual test plan of ten scenarios — the everyday
+[`examples/`](examples/README.md) is a manual test plan of eleven scenarios — the everyday
 single-component case, a complete system, placeholder rendering on its own, every relation type,
 namespace equality, a Group/User-only graph, each problem the reader reports, a 37-entity
-catalog for the viewport controls, the empty state, and filename matching. Each lists the exact
+catalog for the viewport controls, the empty state, filename matching, and the alpha
+`AiResource` kind. Each lists the exact
 entity, placeholder, relation and problem counts it should produce, and those counts are
 asserted by both implementations.
 
-- **VS Code**: <kbd>F5</kbd> from this repository launches an Extension Development Host with
-  `examples/` open.
-- **JetBrains**: `./gradlew runIde` from `editors/jetbrains`, optionally with
-  `-PopenFile=examples/04-all-relations/catalog-info.yaml`.
+- **JetBrains**: `make run-jetbrains`, which opens the large example in a sandbox IDE.
+- **VS Code**: `make run-vscode` runs the extension from source (as does <kbd>F5</kbd> in this
+  repository); `make run-vscode-package` installs the real `.vsix` into a throwaway profile.
+
+Both take `FILE=examples/<name>/catalog-info.yaml` to open a different example.
 
 ## Relations understood
 
@@ -98,14 +101,20 @@ asserted by both implementations.
 | `system` | `partOf` | `System` |
 | `domain` | `partOf` | `Domain` |
 | `subcomponentOf` | `partOf` | `Component` |
+| `subdomainOf` | `partOf` | `Domain` |
 | `parent` | `childOf` | `Group` |
 | `children` | `parentOf` | `Group` |
 | `members` | `hasMember` | `User` |
 | `memberOf` | `memberOf` | `Group` |
 | `providesApis` | `providesApi` | `API` |
 | `consumesApis` | `consumesApi` | `API` |
-| `dependsOn` | `dependsOn` | `Component` |
-| `dependencyOf` | `dependencyOf` | `Component` |
+| `dependsOn` | `dependsOn` | must name its kind — except on an `AiResource`, where `AiResource` |
+| `dependencyOf` | `dependencyOf` | must name its kind |
+| `skills`, `plugins` (on an `AiResource`) | `hasPart` | `AiResource` |
+
+`AiResource` is Backstage's alpha kind for AI-tool skills, rules, plugins and marketplaces. A
+bare name in `dependsOn` or `dependencyOf` on any other kind is reported as a problem, because
+Backstage gives those fields no default kind.
 
 An explicit prefix always wins: `owner: user:grahambrooks` yields a `User`, not a `Group`.
 References resolve the way Backstage resolves them — `[<kind>:][<namespace>/]<name>`, with the
@@ -129,9 +138,10 @@ Stated so a later change doesn't "complete" something that was cut on purpose:
 
 CalVer, kept in step across editors: `pluginVersion` in `editors/jetbrains/gradle.properties`
 and `version` in `editors/vscode/package.json`. Tag `v<version>`; the release workflow checks
-both match, builds each editor's artifact, and attaches them to a GitHub release. Publishing to
-the JetBrains Marketplace and the VS Code Marketplace is irreversible and stays behind a manual
-`workflow_dispatch`.
+both match, builds each editor's artifact, and attaches them to a GitHub release — in this
+private repository, which is how testers get packages for now. Publishing to the JetBrains
+Marketplace and the VS Code Marketplace is deferred (see [ROADMAP.md](ROADMAP.md)); the workflow
+for it is irreversible and stays behind a manual `workflow_dispatch` that has never been run.
 
 ## Licence
 

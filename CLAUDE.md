@@ -110,7 +110,8 @@ code --extensionDevelopmentPath="$PWD" --new-window ../../examples
   and `version` in `editors/vscode/package.json`. The release workflow fails a tag that matches
   one but not the other.
 - **Trunk-based**: commit directly to `main`; PRs are not required.
-- **Irreversible publishes stay behind a manual `workflow_dispatch`** — both marketplaces.
+- **Irreversible publishes stay behind a manual `workflow_dispatch`** — both marketplaces. Not
+  going public yet: do not run it, and do not suggest it as a next step.
 - `examples/` is simultaneously the human test plan and the conformance corpus input. Adding an
   example means updating `examples/README.md`, `ExamplesTest.kt` *and*
   `conformance/manifest.json`, then regenerating the goldens.
@@ -122,5 +123,6 @@ file** (cross-file resolution would destroy the external-placeholder boundary th
 point), there is no network access, `Location.spec.targets` produces no edges, and the graph is
 read-only.
 
-`ROADMAP.md` has the next step — a Rust language server serving Vim, Neovim, Helix, Emacs,
-Sublime and Zed, rather than a per-editor core — and the reasoning behind it.
+Two more decisions, both in `ROADMAP.md`: **no further editors** (the earlier language-server
+plan is shelved, not pending), and **publishing is deferred** — the repository is private and
+`publish-marketplace.yml` must not be run until the owner decides to go public.
