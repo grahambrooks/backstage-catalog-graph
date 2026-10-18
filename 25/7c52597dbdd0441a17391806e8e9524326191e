@@ -1,0 +1,77 @@
+ROADMAP.md
+  s_ccff39c7afa1ba::t_171655daa73d81 83
+conformance/cases/casing.yaml
+  s_ccff39c7afa1ba::t_9664d646b1dea3 2-3,13
+editors/vscode/src/core/relationType.ts
+  s_ccff39c7afa1ba::t_3e7d0715cb16e2 17-19,25-31,34-37,43,50-54,56-67
+editors/vscode/src/core/catalogGraphBuilder.ts
+  s_ccff39c7afa1ba::t_3e7d0715cb16e2 10,58,60-69
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/layout/LayeredLayout.kt
+  s_ccff39c7afa1ba::t_702a0ca4d1a843 20,114
+examples/README.md
+  s_ccff39c7afa1ba::t_64324317da750c 27,34
+  s_ccff39c7afa1ba::t_4ca62f83508438 54-56,81-85
+  s_ccff39c7afa1ba::t_a335b674738d54 86
+editors/vscode/src/core/layeredLayout.ts
+  s_ccff39c7afa1ba::t_3e7d0715cb16e2 101,301
+conformance/cases/ref-forms.yaml
+  s_ccff39c7afa1ba::t_f6874392b5d55f 1-2,11
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/model/RelationType.kt
+  s_ccff39c7afa1ba::t_592c6e1507a729 9-22
+conformance/expected/04-all-relations.json
+  s_ccff39c7afa1ba::t_fb1c3ff6da0a5a 3-4,11,20-22,34-35,48,50-52
+editors/vscode/src/core/entityKind.ts
+  s_ccff39c7afa1ba::t_3e7d0715cb16e2 22-25
+conformance/expected/case-ref-forms.json
+  s_ccff39c7afa1ba::t_f6874392b5d55f 16
+conformance/expected/case-kind-scoped-fields.json
+  s_ccff39c7afa1ba::t_fb1c3ff6da0a5a 1-29
+conformance/spec.md
+  s_ccff39c7afa1ba::t_b3234d9521ee3f 39-42,56-83,119
+  s_ccff39c7afa1ba::t_171655daa73d81 139,143
+CLAUDE.md
+  s_ccff39c7afa1ba::t_171655daa73d81 13
+  s_ccff39c7afa1ba::t_d104d64af22494 65,79
+  s_ccff39c7afa1ba::t_75c91a9132c41e 57-61
+conformance/cases/kind-scoped-fields.yaml
+  s_ccff39c7afa1ba::t_9664d646b1dea3 1-40
+editors/jetbrains/src/test/kotlin/com/grahambrooks/backstage/catalog/ExamplesTest.kt
+  s_ccff39c7afa1ba::t_64324317da750c 37,45,86-106
+  s_ccff39c7afa1ba::t_fd6124bc4aa095 107-108
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/model/EntityKind.kt
+  s_ccff39c7afa1ba::t_592c6e1507a729 22-28
+conformance/expected/11-ai-resources.json
+  s_ccff39c7afa1ba::t_fb1c3ff6da0a5a 1-41
+conformance/manifest.json
+  s_ccff39c7afa1ba::t_256ebb4c5d5a27 58-62,78-80,82
+  s_ccff39c7afa1ba::t_e4746d8d4c14ea 81
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/ui/CatalogPalette.kt
+  s_ccff39c7afa1ba::t_5990255987ee5f 26
+  s_ccff39c7afa1ba::t_702a0ca4d1a843 47
+editors/jetbrains/src/main/kotlin/com/grahambrooks/backstage/catalog/model/CatalogGraphBuilder.kt
+  s_ccff39c7afa1ba::t_592c6e1507a729 15-19,23-24,27-30,36,43-47,50-53,77,79-87
+examples/04-all-relations/catalog-info.yaml
+  s_ccff39c7afa1ba::t_9664d646b1dea3 1,5-10,20-29,111-124
+editors/vscode/src/webview/palette.ts
+  s_ccff39c7afa1ba::t_3e7d0715cb16e2 17,31,45
+editors/vscode/src/core/outline.ts
+  s_ccff39c7afa1ba::t_3e7d0715cb16e2 34
+examples/11-ai-resources/catalog-info.yaml
+  s_ccff39c7afa1ba::t_9664d646b1dea3 1-103
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "257c52597dbdd0441a17391806e8e9524326191e",
+  "prompts": {},
+  "sessions": {
+    "s_ccff39c7afa1ba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "077998fa-6922-450c-91cb-7db0d67c3e3c",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
