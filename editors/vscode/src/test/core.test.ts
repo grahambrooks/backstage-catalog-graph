@@ -5,6 +5,7 @@ import { isCatalogFileName, matchesBaseName } from '../core/catalogFiles';
 import { buildCatalogGraph } from '../core/catalogGraphBuilder';
 import { declaredNodes, externalNodes, keyOf } from '../core/catalogGraph';
 import { formatRef, parseRef, shortLabel } from '../core/entityRef';
+import { layoutGraph } from '../core/layeredLayout';
 import { foldOwners } from '../core/ownerBadges';
 import { readDocuments } from '../core/yamlDocuments';
 import { fromWire, toWire } from '../core/wire';
@@ -212,5 +213,44 @@ spec: { parent: org }
 
   test('a declared owner stays', () => {
     ok(folded.graph.nodes.has('group:default/team'));
+  });
+});
+
+describe('hierarchy inside a layer', () => {
+  const graph = buildCatalogGraph(
+    readDocuments(`
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata: { name: org }
+spec: { type: department, children: [payments] }
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata: { name: platform }
+spec: { type: team, parent: org }
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata: { name: payments }
+spec: { type: team }
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata: { name: sre }
+spec: { type: team, parent: platform }
+`),
+  );
+  const layout = layoutGraph(graph, () => ({ width: 100, height: 50 }));
+  const y = (name: string) => layout.nodes.get(`group:default/${name}`)!.y;
+
+  test('is drawn parents above children', () => {
+    ok(y('org') < y('platform'));
+    equal(y('platform'), y('payments'));
+    ok(y('platform') < y('sre'));
+  });
+
+  test('leaves the logical layer whole', () => {
+    equal(layout.layers.length, 1);
+    equal(layout.layers[0].length, 4);
   });
 });

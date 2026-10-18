@@ -1,9 +1,13 @@
 package com.grahambrooks.backstage.catalog.layout
 
 import com.grahambrooks.backstage.catalog.Fixtures
+import com.grahambrooks.backstage.catalog.model.CatalogEdge
 import com.grahambrooks.backstage.catalog.model.CatalogGraph
 import com.grahambrooks.backstage.catalog.model.CatalogGraphBuilder
+import com.grahambrooks.backstage.catalog.model.CatalogNode
 import com.grahambrooks.backstage.catalog.model.EntityKind
+import com.grahambrooks.backstage.catalog.model.EntityRef
+import com.grahambrooks.backstage.catalog.model.RelationType
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -69,5 +73,46 @@ class LayeredLayoutTest {
     @Test
     fun `an empty graph lays out to nothing rather than failing`() {
         assertSame(GraphLayout.EMPTY, LayeredLayout(sizer = { _ -> 10.0 to 10.0 }).layout(CatalogGraph.EMPTY))
+    }
+
+    private fun group(name: String): CatalogNode {
+        val ref = requireNotNull(EntityRef.parse(name, defaultKind = "group"))
+        return CatalogNode(ref = ref, kind = EntityKind.GROUP, title = name)
+    }
+
+    private val org = group("org")
+    private val platform = group("platform")
+    private val payments = group("payments")
+    private val sre = group("sre")
+    private val teams = CatalogGraph(
+        nodes = listOf(org, payments, platform, sre).associateBy { it.ref },
+        edges = listOf(
+            CatalogEdge(platform.ref, org.ref, RelationType.CHILD_OF),
+            CatalogEdge(org.ref, payments.ref, RelationType.PARENT_OF),
+            CatalogEdge(sre.ref, platform.ref, RelationType.CHILD_OF),
+        ),
+    )
+    private val teamLayout = LayeredLayout(sizer = { _ -> 100.0 to 50.0 }).layout(teams)
+
+    private fun y(node: CatalogNode) = teamLayout.nodes.getValue(node.ref).y
+
+    @Test
+    fun `a hierarchy inside one layer is drawn parents above children`() {
+        assertTrue(y(org) < y(platform))
+        assertEquals(y(platform), y(payments))
+        assertTrue(y(platform) < y(sre))
+    }
+
+    @Test
+    fun `drawing a layer as several rows leaves the logical layer whole`() {
+        assertEquals(1, teamLayout.layers.size)
+        assertEquals(teams.nodes.keys, teamLayout.layers.single().toSet())
+    }
+
+    @Test
+    fun `a hierarchy cycle still places every node`() {
+        val cyclic = teams.copy(edges = teams.edges + CatalogEdge(org.ref, sre.ref, RelationType.CHILD_OF))
+        val placed = LayeredLayout(sizer = { _ -> 100.0 to 50.0 }).layout(cyclic)
+        assertEquals(cyclic.nodes.keys, placed.nodes.keys)
     }
 }

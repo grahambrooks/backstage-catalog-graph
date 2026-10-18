@@ -59,6 +59,8 @@ one wrote `checkout-api` and the other wrote `api:retail/checkout-api`.
 
 **06-org-chart** — Group and User are the two lowest layers, so this graph occupies only the
 bottom of the layout. Check it still centres and that **Fit to Window** does something sensible.
+The Groups form a hierarchy, so their layer is drawn as one row per depth: parent teams above
+their children, and the `childOf`/`parentOf` edges running vertically, not along a row.
 
 **07-malformed** — a warning strip at the top of the graph pane reading the first problem and
 `(+3 more)`; hovering it lists all four. Two solid nodes remain. The surviving `duplicated`

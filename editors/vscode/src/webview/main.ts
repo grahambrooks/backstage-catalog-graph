@@ -75,7 +75,7 @@ const externalCheckbox = document.getElementById('external') as HTMLInputElement
 const ownersCheckbox = document.getElementById('owners') as HTMLInputElement;
 
 let graph: CatalogGraph = { nodes: new Map(), edges: [], problems: [] };
-let layout: GraphLayout = { nodes: new Map(), width: 0, height: 0 };
+let layout: GraphLayout = { nodes: new Map(), width: 0, height: 0, layers: [] };
 let viewport: Viewport = { scale: 1, originX: 0, originY: 0 };
 let selected: string | undefined;
 let highlighted = new Set<string>();

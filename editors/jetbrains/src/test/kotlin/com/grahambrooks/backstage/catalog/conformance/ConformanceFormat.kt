@@ -81,15 +81,15 @@ object ConformanceFormat {
         }
     }
 
-    /** Node references per layer, top layer first, in left-to-right layout order. */
+    /**
+     * Node references per logical layer, top layer first, in contract order. Read from the
+     * layout's own layers rather than by grouping on y, because a layer with an internal
+     * hierarchy is drawn as several rows.
+     */
     private fun layersOf(graph: CatalogGraph): List<List<String>> {
         if (graph.isEmpty) return emptyList()
         val layout = LayeredLayout(sizer = { FIXED_NODE_WIDTH to FIXED_NODE_HEIGHT }).layout(graph)
-        return layout.nodes.values
-            .groupBy { it.y }
-            .toSortedMap()
-            .values
-            .map { row -> row.sortedBy { it.x }.map { it.node.ref.toString() } }
+        return layout.layers.map { layer -> layer.map { it.toString() } }
     }
 
     private fun quoteOrNull(value: String?): String = value?.let { quote(it) } ?: "null"

@@ -14,9 +14,15 @@ export interface GraphLayout {
   readonly nodes: ReadonlyMap<string, NodeBounds>;
   readonly width: number;
   readonly height: number;
+  /**
+   * The logical layers, top first, each in its contract order. A layer can be drawn as more
+   * than one row (see `layoutGraph`), so this -- not grouping `nodes` by y -- is what the
+   * conformance goldens record.
+   */
+  readonly layers: readonly (readonly string[])[];
 }
 
-export const EMPTY_LAYOUT: GraphLayout = { nodes: new Map(), width: 0, height: 0 };
+export const EMPTY_LAYOUT: GraphLayout = { nodes: new Map(), width: 0, height: 0, layers: [] };
 
 /** How wide and tall a node should be drawn. Supplied by the caller so measurement stays there. */
 export type NodeSizer = (node: CatalogNode) => { width: number; height: number };
@@ -26,6 +32,7 @@ export interface LayoutOptions {
   readonly verticalGap?: number;
   readonly margin?: number;
   readonly orderingSweeps?: number;
+  readonly hierarchyGap?: number;
 }
 
 export function centerX(bounds: NodeBounds): number {
@@ -63,6 +70,11 @@ export function nodeAt(layout: GraphLayout, x: number, y: number): NodeBounds | 
  *
  * Within a layer, nodes are ordered by the barycentre heuristic to cut edge crossings. The
  * exact procedure is part of the cross-editor contract; see "Layout" in `conformance/spec.md`.
+ *
+ * A layer that contains its own hierarchy -- Groups with a `parent`, Components with a
+ * `subcomponentOf` -- is then drawn as several rows, parents above children, so those edges run
+ * vertically instead of along a single row through their siblings. That split is presentation
+ * only: the layer and its order, which the conformance contract pins, are unchanged.
  */
 export function layoutGraph(
   graph: CatalogGraph,
@@ -77,27 +89,31 @@ export function layoutGraph(
   const verticalGap = options.verticalGap ?? 84;
   const margin = options.margin ?? 32;
   const orderingSweeps = options.orderingSweeps ?? 4;
+  const hierarchyGap = options.hierarchyGap ?? 56;
 
   const layers = orderLayers(layerNodes(graph), adjacencyOf(graph), orderingSweeps);
 
-  // Pack each layer left to right, then centre the layers on a common axis.
+  // Pack each row left to right, then centre the rows on a common axis.
   const rows: NodeBounds[][] = [];
   let y = margin;
   let widest = 0;
 
   for (const layer of layers) {
-    let x = 0;
-    let tallest = 0;
-    const row: NodeBounds[] = [];
-    for (const node of layer) {
-      const { width, height } = sizer(node);
-      row.push({ node, x, y, width, height });
-      x += width + horizontalGap;
-      tallest = Math.max(tallest, height);
-    }
-    widest = Math.max(widest, Math.max(0, x - horizontalGap));
-    rows.push(row);
-    y += tallest + verticalGap;
+    const split = hierarchyRows(layer, graph);
+    split.forEach((nodes, index) => {
+      let x = 0;
+      let tallest = 0;
+      const row: NodeBounds[] = [];
+      for (const node of nodes) {
+        const { width, height } = sizer(node);
+        row.push({ node, x, y, width, height });
+        x += width + horizontalGap;
+        tallest = Math.max(tallest, height);
+      }
+      widest = Math.max(widest, Math.max(0, x - horizontalGap));
+      rows.push(row);
+      y += tallest + (index < split.length - 1 ? hierarchyGap : verticalGap);
+    });
   }
 
   const positioned = new Map<string, NodeBounds>();
@@ -113,7 +129,77 @@ export function layoutGraph(
     nodes: positioned,
     width: widest + margin * 2,
     height: Math.max(0, y - verticalGap + margin),
+    layers: layers.map((layer) => layer.map((node) => keyOf(node.ref))),
   };
+}
+
+/**
+ * Splits one ordered layer into rows by hierarchy depth within the layer. Each row keeps the
+ * layer's order, then a single barycentre pass against the row above puts children under their
+ * parents; a node with no parent in that row keeps its index.
+ */
+function hierarchyRows(layer: CatalogNode[], graph: CatalogGraph): CatalogNode[][] {
+  const inLayer = new Set(layer.map((node) => keyOf(node.ref)));
+  const parents = new Map<string, string[]>();
+  for (const edge of graph.edges) {
+    let child: string;
+    let parent: string;
+    if (edge.type === 'parentOf') {
+      [child, parent] = [edge.to, edge.from];
+    } else if (edge.type === 'childOf' || edge.type === 'partOf') {
+      [child, parent] = [edge.from, edge.to];
+    } else {
+      continue;
+    }
+    if (child !== parent && inLayer.has(child) && inLayer.has(parent)) {
+      parents.set(child, [...(parents.get(child) ?? []), parent]);
+    }
+  }
+  if (parents.size === 0) {
+    return [layer];
+  }
+
+  const depths = new Map<string, number>();
+  const depthOf = (key: string, visiting: ReadonlySet<string>): number => {
+    const known = depths.get(key);
+    if (known !== undefined) {
+      return known;
+    }
+    // A cycle has no top; the node that closes it is treated as a root.
+    if (visiting.has(key)) {
+      return 0;
+    }
+    const above = parents.get(key) ?? [];
+    const next = new Set(visiting).add(key);
+    const depth = above.length === 0 ? 0 : 1 + Math.max(...above.map((p) => depthOf(p, next)));
+    depths.set(key, depth);
+    return depth;
+  };
+  layer.forEach((node) => depthOf(keyOf(node.ref), new Set()));
+
+  const byDepth = new Map<number, CatalogNode[]>();
+  for (const node of layer) {
+    const depth = depths.get(keyOf(node.ref))!;
+    byDepth.set(depth, [...(byDepth.get(depth) ?? []), node]);
+  }
+  const rows = [...byDepth.keys()].sort((a, b) => a - b).map((depth) => byDepth.get(depth)!);
+
+  for (let index = 1; index < rows.length; index++) {
+    const positions = new Map<string, number>();
+    rows[index - 1].forEach((node, position) => positions.set(keyOf(node.ref), position));
+    const barycentres = new Map<string, number>();
+    rows[index].forEach((node, position) => {
+      const above = (parents.get(keyOf(node.ref)) ?? [])
+        .map((parent) => positions.get(parent))
+        .filter((value): value is number => value !== undefined);
+      barycentres.set(
+        keyOf(node.ref),
+        above.length === 0 ? position : above.reduce((sum, value) => sum + value, 0) / above.length,
+      );
+    });
+    rows[index].sort((a, b) => barycentres.get(keyOf(a.ref))! - barycentres.get(keyOf(b.ref))!);
+  }
+  return rows;
 }
 
 /** Buckets nodes by kind rank, dropping the ranks nothing lands in so there are no gaps. */

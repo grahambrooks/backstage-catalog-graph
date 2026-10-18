@@ -25,6 +25,12 @@ data class GraphLayout(
     val nodes: Map<EntityRef, NodeBounds>,
     val width: Double,
     val height: Double,
+    /**
+     * The logical layers, top first, each in its contract order. A layer can be drawn as more
+     * than one row (see [LayeredLayout]), so this -- not grouping [nodes] by y -- is what the
+     * conformance goldens record.
+     */
+    val layers: List<List<EntityRef>> = emptyList(),
 ) {
     fun at(point: Pair<Double, Double>): NodeBounds? = nodes.values.firstOrNull { point in it }
 

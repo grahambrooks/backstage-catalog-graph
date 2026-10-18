@@ -114,6 +114,24 @@ the adjacent layer keeps its current index. Sorting must be **stable**.
 Layout must terminate on cyclic and self-referencing graphs, and must place every node
 (`case-cycles`).
 
+### Drawing a layer as several rows
+
+This part is presentation, not contract: nothing below is in the golden files.
+
+A layer can hold its own hierarchy -- Groups joined by `parent`/`children`, Components by
+`subcomponentOf`. Drawn as one row, those edges run sideways through their siblings. So after
+ordering, a layer is drawn as one row per hierarchy depth, parents above children:
+
+- A node's parents are the far ends of its `childOf` and `partOf` edges, and the near end of a
+  `parentOf` edge, counting only parents in the same layer.
+- Depth is 0 with no parent, otherwise one more than the deepest parent. A node reached again
+  while its own depth is being worked out counts as depth 0, which is what ends a cycle.
+- Each row keeps the layer's order. Then each row below the first gets one stable barycentre
+  pass against the row above it, using parents only, so children sit under their parents.
+
+Because a layer can span several rows, a runner must read layer membership and order from the
+layout's logical layers, not by grouping nodes on their y coordinate.
+
 ## Golden document format
 
 One JSON document per case in `expected/<id>.json`.
@@ -132,8 +150,9 @@ One JSON document per case in `expected/<id>.json`.
 - `kind` is the display name (`Component`, `API`, `Domain`, …), not the lower-cased reference
   kind. Anything unrecognised is `Entity`.
 - `type` and `lifecycle` are `null` when absent. `tags` is `[]` when absent.
-- `layers` **is** ordered — outer array top layer first, inner arrays left to right. This is what
-  pins the layout algorithm across implementations.
+- `layers` **is** ordered — outer array top layer first, inner arrays in the order the ordering
+  sweeps leave them. This is what pins the layout algorithm across implementations. They are
+  the logical layers, before any layer is drawn as several rows.
 - Layout for the golden files is measured with every node fixed at 100 × 50, because real
   rendering measures text and no two UI toolkits would agree on the result.
 

@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path';
 import { describe, test } from 'node:test';
 
 import { buildCatalogGraph } from '../core/catalogGraphBuilder';
-import { CatalogGraph, isEmpty, keyOf } from '../core/catalogGraph';
+import { CatalogGraph, isEmpty } from '../core/catalogGraph';
 import { layoutGraph } from '../core/layeredLayout';
 import { formatRef } from '../core/entityRef';
 import { readDocuments } from '../core/yamlDocuments';
@@ -69,7 +69,11 @@ function render(graph: CatalogGraph): Golden {
   return { nodes, edges, problems, layers: layersOf(graph) };
 }
 
-/** Node references per layer, top layer first, in left-to-right layout order. */
+/**
+ * Node references per logical layer, top layer first, in contract order. Read from the layout's
+ * own layers rather than by grouping on y, because a layer with an internal hierarchy is drawn
+ * as several rows.
+ */
 function layersOf(graph: CatalogGraph): string[][] {
   if (isEmpty(graph)) {
     return [];
@@ -78,17 +82,7 @@ function layersOf(graph: CatalogGraph): string[][] {
     width: FIXED_NODE_WIDTH,
     height: FIXED_NODE_HEIGHT,
   }));
-
-  const byRow = new Map<number, { x: number; ref: string }[]>();
-  for (const bounds of layout.nodes.values()) {
-    const row = byRow.get(bounds.y) ?? [];
-    row.push({ x: bounds.x, ref: keyOf(bounds.node.ref) });
-    byRow.set(bounds.y, row);
-  }
-
-  return [...byRow.keys()]
-    .sort((a, b) => a - b)
-    .map((y) => byRow.get(y)!.sort((a, b) => a.x - b.x).map((entry) => entry.ref));
+  return layout.layers.map((layer) => [...layer]);
 }
 
 /** By UTF-16 code unit, matching the generator. `localeCompare` is machine-dependent. */

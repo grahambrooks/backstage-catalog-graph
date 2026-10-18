@@ -3,6 +3,7 @@ package com.grahambrooks.backstage.catalog.layout
 import com.grahambrooks.backstage.catalog.model.CatalogGraph
 import com.grahambrooks.backstage.catalog.model.CatalogNode
 import com.grahambrooks.backstage.catalog.model.EntityRef
+import com.grahambrooks.backstage.catalog.model.RelationType
 
 /**
  * A Sugiyama-style layered layout, specialised for catalogs.
@@ -14,6 +15,11 @@ import com.grahambrooks.backstage.catalog.model.EntityRef
  * new edge changes the longest path.
  *
  * Within a layer, nodes are ordered by the barycentre heuristic to cut edge crossings.
+ *
+ * A layer that contains its own hierarchy -- Groups with a `parent`, Components with a
+ * `subcomponentOf` -- is then drawn as several rows, parents above children, so those edges run
+ * vertically instead of along a single row through their siblings. That split is presentation
+ * only: the layer and its order, which the conformance contract pins, are unchanged.
  */
 class LayeredLayout(
     private val sizer: NodeSizer,
@@ -21,6 +27,7 @@ class LayeredLayout(
     private val verticalGap: Double = 84.0,
     private val margin: Double = 32.0,
     private val orderingSweeps: Int = 4,
+    private val hierarchyGap: Double = 56.0,
 ) {
 
     fun layout(graph: CatalogGraph): GraphLayout {
@@ -30,7 +37,7 @@ class LayeredLayout(
         val adjacency = adjacencyOf(graph)
         val ordered = orderLayers(layers, adjacency)
 
-        return position(ordered)
+        return position(ordered, graph)
     }
 
     /** Buckets nodes by kind rank, dropping the ranks nothing lands in so there are no gaps. */
@@ -85,26 +92,75 @@ class LayeredLayout(
         return current
     }
 
-    /** Packs each layer left to right, then centres the layers on a common axis. */
-    private fun position(layers: List<List<CatalogNode>>): GraphLayout {
+    /**
+     * Splits one ordered layer into rows by hierarchy depth within the layer. Each row keeps the
+     * layer's order, then a single barycentre pass against the row above puts children under
+     * their parents; a node with no parent in that row keeps its index.
+     */
+    private fun hierarchyRows(layer: List<CatalogNode>, graph: CatalogGraph): List<List<CatalogNode>> {
+        val inLayer = layer.map { it.ref }.toSet()
+        val parents = mutableMapOf<EntityRef, MutableList<EntityRef>>()
+        for (edge in graph.edges) {
+            val (child, parent) = when (edge.type) {
+                RelationType.PARENT_OF -> edge.to to edge.from
+                RelationType.CHILD_OF, RelationType.PART_OF -> edge.from to edge.to
+                else -> continue
+            }
+            if (child != parent && child in inLayer && parent in inLayer) {
+                parents.getOrPut(child) { mutableListOf() } += parent
+            }
+        }
+        if (parents.isEmpty()) return listOf(layer)
+
+        val depths = mutableMapOf<EntityRef, Int>()
+        fun depthOf(ref: EntityRef, visiting: Set<EntityRef>): Int {
+            depths[ref]?.let { return it }
+            // A cycle has no top; the node that closes it is treated as a root.
+            if (ref in visiting) return 0
+            val above = parents[ref].orEmpty()
+            val depth = if (above.isEmpty()) 0 else 1 + above.maxOf { depthOf(it, visiting + ref) }
+            depths[ref] = depth
+            return depth
+        }
+        layer.forEach { depthOf(it.ref, emptySet()) }
+
+        val rows = layer.groupBy { depths.getValue(it.ref) }.toSortedMap().values.map { it.toMutableList() }
+        for (index in 1 until rows.size) {
+            val positions = rows[index - 1].withIndex().associate { (i, node) -> node.ref to i.toDouble() }
+            val current = rows[index].toList()
+            rows[index].sortWith(
+                compareBy { node ->
+                    val above = parents[node.ref].orEmpty().mapNotNull { positions[it] }
+                    if (above.isEmpty()) current.indexOf(node).toDouble() else above.average()
+                },
+            )
+        }
+        return rows
+    }
+
+    /** Packs each row left to right, then centres the rows on a common axis. */
+    private fun position(layers: List<List<CatalogNode>>, graph: CatalogGraph): GraphLayout {
         val rows = mutableListOf<MutableList<NodeBounds>>()
         var y = margin
         var widest = 0.0
 
         for (layer in layers) {
-            var x = 0.0
-            var tallest = 0.0
-            val row = mutableListOf<NodeBounds>()
-            for (node in layer) {
-                val (width, height) = sizer.size(node)
-                row += NodeBounds(node, x, y, width, height)
-                x += width + horizontalGap
-                tallest = maxOf(tallest, height)
+            val split = hierarchyRows(layer, graph)
+            split.forEachIndexed { index, nodes ->
+                var x = 0.0
+                var tallest = 0.0
+                val row = mutableListOf<NodeBounds>()
+                for (node in nodes) {
+                    val (width, height) = sizer.size(node)
+                    row += NodeBounds(node, x, y, width, height)
+                    x += width + horizontalGap
+                    tallest = maxOf(tallest, height)
+                }
+                val rowWidth = (x - horizontalGap).coerceAtLeast(0.0)
+                widest = maxOf(widest, rowWidth)
+                rows += row
+                y += tallest + if (index < split.lastIndex) hierarchyGap else verticalGap
             }
-            val rowWidth = (x - horizontalGap).coerceAtLeast(0.0)
-            widest = maxOf(widest, rowWidth)
-            rows += row
-            y += tallest + verticalGap
         }
 
         val positioned = mutableMapOf<EntityRef, NodeBounds>()
@@ -117,6 +173,6 @@ class LayeredLayout(
         }
 
         val height = (y - verticalGap + margin).coerceAtLeast(0.0)
-        return GraphLayout(positioned, widest + margin * 2, height)
+        return GraphLayout(positioned, widest + margin * 2, height, layers.map { layer -> layer.map { it.ref } })
     }
 }
