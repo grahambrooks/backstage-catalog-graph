@@ -197,6 +197,9 @@ export class CatalogGraphPanel {
     <label id="owners-toggle" title="Show each entity's owner as a badge instead of drawing an ownedBy edge to it">
       <input type="checkbox" id="owners" checked> Owners as badges
     </label>
+    <label id="focus-toggle" title="Draw only the selected entity and what it is joined to; the focus follows the selection">
+      <input type="checkbox" id="focus"> Focus
+    </label>
     <span class="separator"></span>
     <button id="reload" title="Reload graph">Reload</button>
     <span id="problems" hidden></span>

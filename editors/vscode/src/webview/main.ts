@@ -17,6 +17,7 @@ import {
   layoutGraph,
   right,
 } from '../core/layeredLayout';
+import { focusAround } from '../core/focus';
 import { foldOwners } from '../core/ownerBadges';
 import { SPEC_RULES } from '../core/relationType';
 import { WireGraph, fromWire } from '../core/wire';
@@ -56,6 +57,8 @@ const ZOOM_STEP = 1.12;
 const MIN_SCALE = 0.1;
 const MAX_SCALE = 3;
 const WHEEL_PAN_STEP = 48;
+/** Pointer travel, in pixels, beyond which a press is a pan rather than a click. */
+const DRAG_SLOP = 4;
 const LABEL_SCALE_THRESHOLD = 0.72;
 
 interface Viewport {
@@ -74,6 +77,7 @@ const legendLabel = document.getElementById('legend') as HTMLElement;
 const problemsLabel = document.getElementById('problems') as HTMLElement;
 const externalCheckbox = document.getElementById('external') as HTMLInputElement;
 const ownersCheckbox = document.getElementById('owners') as HTMLInputElement;
+const focusCheckbox = document.getElementById('focus') as HTMLInputElement;
 const findInput = document.getElementById('find') as HTMLInputElement;
 const findStatus = document.getElementById('find-status') as HTMLElement;
 
@@ -83,6 +87,9 @@ let viewport: Viewport = { scale: 1, originX: 0, originY: 0 };
 let selected: string | undefined;
 let highlighted = new Set<string>();
 let showExternal = true;
+let focusMode = false;
+/** The layout before focus mode cuts it down; Find searches and orders by this one. */
+let fullLayout: GraphLayout = layout;
 /** The entity under the caret when it last moved, so only a move into another entity reacts. */
 let caretEntity: string | undefined;
 let matches: string[] = [];
@@ -145,6 +152,11 @@ externalCheckbox.addEventListener('change', () => {
   render();
   runFind(false);
 });
+focusCheckbox.addEventListener('change', () => {
+  focusMode = focusCheckbox.checked;
+  render();
+  fitToWindow();
+});
 ownersCheckbox.addEventListener('change', () => {
   ownersAsBadges = ownersCheckbox.checked;
   render();
@@ -189,7 +201,7 @@ function matching(query: string): string[] {
   if (!needle) {
     return [];
   }
-  return [...layout.nodes.entries()]
+  return [...fullLayout.nodes.entries()]
     .filter(
       ([key, bounds]) =>
         bounds.node.title.toLowerCase().includes(needle) || key.includes(needle),
@@ -236,11 +248,15 @@ function followCaret(offset: number): void {
  * zoomed out too far to read is first brought back to actual size.
  */
 function reveal(key: string, zoomToRead: boolean): void {
+  if (!fullLayout.nodes.has(key)) {
+    return;
+  }
+  // Selecting first: in focus mode it re-lays the graph out around `key`.
+  select(key);
   const bounds = layout.nodes.get(key);
   if (!bounds) {
     return;
   }
-  select(key);
   const rect = svg.getBoundingClientRect();
   const zoomed = zoomToRead && viewport.scale < LABEL_SCALE_THRESHOLD;
   if (zoomed) {
@@ -297,8 +313,17 @@ function drawnGraph(): CatalogGraph {
 }
 
 function render(): void {
-  const visible = drawnGraph();
-  layout = layoutGraph(visible, measure);
+  const unfocused = drawnGraph();
+  fullLayout = layoutGraph(unfocused, measure);
+  const focus = focusMode && selected && unfocused.nodes.has(selected) ? selected : undefined;
+  const visible = focus
+    ? focusAround(
+        unfocused,
+        focus,
+        [...owners].filter(([, list]) => list.some((owner) => keyOf(owner) === focus)).map(([key]) => key),
+      )
+    : unfocused;
+  layout = focus ? layoutGraph(visible, measure) : fullLayout;
 
   while (svg.firstChild) {
     svg.removeChild(svg.firstChild);
@@ -700,13 +725,26 @@ function renderProblems(): void {
 // --- Selection and viewport -------------------------------------------------------------------
 
 function select(key: string | undefined): void {
+  const changed = key !== selected;
   selected = key;
   highlighted = key ? neighbourhoodOf(graph, key) : new Set();
+  if (focusMode && changed) {
+    // The focus follows the selection, so what is drawn changes, not just its emphasis.
+    render();
+    fitToWindow();
+  }
   applyHighlight();
   renderStatus();
 }
 
-svg.addEventListener('click', () => select(undefined));
+// A click on empty canvas deselects -- but not the click that ends a pan, or every drag would
+// clear the selection (and, in focus mode, throw the focus away).
+let dragged = false;
+svg.addEventListener('click', () => {
+  if (!dragged) {
+    select(undefined);
+  }
+});
 
 function applyHighlight(): void {
   const active = highlighted.size > 0;
@@ -807,6 +845,7 @@ svg.addEventListener('pointerdown', (event: PointerEvent) => {
   if (event.button !== 0) {
     return;
   }
+  dragged = false;
   dragAnchor = {
     x: event.clientX,
     y: event.clientY,
@@ -820,6 +859,9 @@ svg.addEventListener('pointerdown', (event: PointerEvent) => {
 svg.addEventListener('pointermove', (event: PointerEvent) => {
   if (!dragAnchor) {
     return;
+  }
+  if (Math.abs(event.clientX - dragAnchor.x) + Math.abs(event.clientY - dragAnchor.y) > DRAG_SLOP) {
+    dragged = true;
   }
   viewport.originX = dragAnchor.originX + (event.clientX - dragAnchor.x);
   viewport.originY = dragAnchor.originY + (event.clientY - dragAnchor.y);

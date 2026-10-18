@@ -57,7 +57,7 @@ Parts of the contract that are easy to break without noticing:
 ### JetBrains (`editors/jetbrains`, Kotlin + Gradle, JDK 21)
 
 ```bash
-./gradlew build                      # compile, 62 tests (unit + conformance corpus)
+./gradlew build                      # compile, 65 tests (unit + conformance corpus)
 ./gradlew test --tests 'com.grahambrooks.backstage.catalog.model.EntityRefTest'   # one class
 ./gradlew test --tests '*ConformanceTest*'
 ./gradlew test -Dconformance.update=true          # regenerate the shared goldens
@@ -71,7 +71,7 @@ Parts of the contract that are easy to break without noticing:
 ### VS Code (`editors/vscode`, TypeScript + Node)
 
 ```bash
-npm test                             # compile, then 42 tests (unit + conformance corpus)
+npm test                             # compile, then 45 tests (unit + conformance corpus)
 node --test out-test/test/core.test.js                        # one file (after npm run compile)
 node --test --test-name-pattern "casing" out-test/test/conformance.test.js   # one test
 npm run typecheck

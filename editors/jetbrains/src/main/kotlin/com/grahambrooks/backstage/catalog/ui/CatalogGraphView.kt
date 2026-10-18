@@ -97,6 +97,7 @@ class CatalogGraphView(
         add(footer, BorderLayout.SOUTH)
 
         installFind()
+        canvas.onLayoutChanged = ::updateLegend
     }
 
     /**
@@ -152,7 +153,6 @@ class CatalogGraphView(
 
     fun show(graph: CatalogGraph, preserveViewport: Boolean) {
         canvas.setGraph(graph, preserveViewport)
-        updateLegend()
         updateProblems(graph)
         updateStatus(graph, selected = null)
         canvas.onSelectionChanged = { node -> updateStatus(graph, node) }
@@ -207,7 +207,6 @@ class CatalogGraphView(
             override fun isSelected(event: AnActionEvent) = canvas.isShowingExternal()
             override fun setSelected(event: AnActionEvent, state: Boolean) {
                 canvas.setShowExternal(state)
-                updateLegend()
                 runFind(restart = false)
             }
         })
@@ -216,9 +215,13 @@ class CatalogGraphView(
             override fun isSelected(event: AnActionEvent) = canvas.isShowingOwnersAsBadges()
             override fun setSelected(event: AnActionEvent, state: Boolean) {
                 canvas.setOwnersAsBadges(state)
-                updateLegend()
                 runFind(restart = false)
             }
+        })
+        add(object : ToggleAction("Focus on Selection", FOCUS_TOGGLE_HINT, AllIcons.General.Locate) {
+            override fun getActionUpdateThread() = ActionUpdateThread.EDT
+            override fun isSelected(event: AnActionEvent) = canvas.isFocusMode()
+            override fun setSelected(event: AnActionEvent, state: Boolean) = canvas.setFocusMode(state)
         })
         add(Separator.getInstance())
         add(simpleAction("Reload Graph", AllIcons.Actions.Refresh) { onRefresh() })
@@ -284,6 +287,8 @@ class CatalogGraphView(
         const val TOOLBAR_PLACE = "BackstageCatalogGraphToolbar"
         const val EXTERNAL_TOGGLE_HINT =
             "Show placeholders for entities referenced by this file but defined elsewhere"
+        const val FOCUS_TOGGLE_HINT =
+            "Draw only the selected entity and what it is joined to; the focus follows the selection"
         const val OWNER_TOGGLE_HINT =
             "Show each entity's owner as a badge instead of drawing an ownedBy edge to it"
     }

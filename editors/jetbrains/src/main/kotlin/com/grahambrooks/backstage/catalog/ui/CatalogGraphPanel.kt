@@ -4,6 +4,7 @@ import com.grahambrooks.backstage.catalog.model.CatalogEdge
 import com.grahambrooks.backstage.catalog.model.CatalogGraph
 import com.grahambrooks.backstage.catalog.model.CatalogNode
 import com.grahambrooks.backstage.catalog.model.EntityRef
+import com.grahambrooks.backstage.catalog.model.Focus
 import com.grahambrooks.backstage.catalog.model.OwnerBadges
 import com.grahambrooks.backstage.catalog.layout.GraphLayout
 import com.grahambrooks.backstage.catalog.layout.LayeredLayout
@@ -65,6 +66,12 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
     private var owners: Map<EntityRef, List<CatalogNode>> = emptyMap()
     private var layout: GraphLayout = GraphLayout.EMPTY
 
+    /** The layout before focus mode cuts it down; Find searches and orders by this one. */
+    private var fullLayout: GraphLayout = GraphLayout.EMPTY
+
+    /** Invoked whenever what is drawn changes -- a toggle, a new file, or a focus move. */
+    var onLayoutChanged: (() -> Unit)? = null
+
     private var scale: Double = 1.0
     private var originX: Double = 0.0
     private var originY: Double = 0.0
@@ -75,6 +82,7 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
 
     private var showExternal: Boolean = true
     private var ownersAsBadges: Boolean = true
+    private var focusMode: Boolean = false
 
     /** Set when a fit was asked for before the panel had a size to fit into. */
     private var fitPending: Boolean = false
@@ -133,6 +141,20 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
 
     fun isShowingOwnersAsBadges(): Boolean = ownersAsBadges
 
+    /**
+     * With focus on, only the selection and what it is joined to are drawn, laid out afresh, and
+     * the focus follows the selection. Nothing selected draws the whole graph.
+     */
+    fun setFocusMode(on: Boolean) {
+        if (focusMode == on) return
+        focusMode = on
+        rebuildLayout()
+        fitToWindow()
+        repaint()
+    }
+
+    fun isFocusMode(): Boolean = focusMode
+
     fun zoomBy(factor: Double) {
         zoomAround(factor, Point2D.Double(width / 2.0, height / 2.0))
     }
@@ -143,8 +165,10 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
      * wrong for following the caret, where the user chose the zoom and should keep it.
      */
     fun reveal(ref: EntityRef, zoomToRead: Boolean) {
-        val bounds = layout.nodes[ref] ?: return
+        if (ref !in fullLayout.nodes) return
+        // Selecting first: in focus mode it re-lays the graph out around [ref].
         select(ref)
+        val bounds = layout.nodes[ref] ?: return
         val zoomed = zoomToRead && scale < LABEL_SCALE_THRESHOLD
         if (zoomed) scale = 1.0
         val left = originX + bounds.x * scale
@@ -166,7 +190,7 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
     fun matching(query: String): List<EntityRef> {
         val needle = query.trim()
         if (needle.isEmpty()) return emptyList()
-        return layout.nodes.values
+        return fullLayout.nodes.values
             .filter { it.node.title.contains(needle, ignoreCase = true) || it.node.ref.toString().contains(needle, ignoreCase = true) }
             .sortedWith(compareBy({ it.y }, { it.x }))
             .map { it.node.ref }
@@ -206,7 +230,11 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         // entity, not a placeholder, so hiding external references does not hide it.
         allOwners = OwnerBadges.fold(graph).owners
         owners = if (ownersAsBadges) allOwners else emptyMap()
-        drawnGraph = if (ownersAsBadges) OwnerBadges.fold(visibleGraph()).graph else visibleGraph()
+        val unfocused = if (ownersAsBadges) OwnerBadges.fold(visibleGraph()).graph else visibleGraph()
+        val focus = selected?.takeIf { focusMode && it in unfocused.nodes }
+        drawnGraph = focus?.let { ref ->
+            Focus.around(unfocused, ref, owned = owners.filterValues { list -> list.any { it.ref == ref } }.keys)
+        } ?: unfocused
 
         val metrics = getFontMetrics(titleFont())
         val subMetrics = getFontMetrics(subtitleFont())
@@ -220,7 +248,9 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
                 .coerceIn(MIN_NODE_WIDTH, MAX_NODE_WIDTH)
             width to if (badge == null) NODE_HEIGHT else NODE_HEIGHT_WITH_BADGE
         })
-        layout = engine.layout(drawnGraph)
+        fullLayout = engine.layout(unfocused)
+        layout = if (focus == null) fullLayout else engine.layout(drawnGraph)
+        onLayoutChanged?.invoke()
     }
 
     private fun badgeText(ref: EntityRef): String? =
@@ -566,6 +596,10 @@ class CatalogGraphPanel : JBPanel<CatalogGraphPanel>() {
         if (selected == ref) return
         selected = ref
         highlighted = ref?.let { graph.neighbourhoodOf(it) }.orEmpty()
+        if (focusMode) {
+            rebuildLayout()
+            fitToWindow()
+        }
         onSelectionChanged?.invoke(ref?.let { graph.nodes[it] })
         repaint()
     }

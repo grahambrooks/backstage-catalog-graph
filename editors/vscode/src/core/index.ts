@@ -13,3 +13,4 @@ export * from './rawDocument';
 export * from './relationType';
 export * from './yamlDocuments';
 export * from './ownerBadges';
+export * from './focus';

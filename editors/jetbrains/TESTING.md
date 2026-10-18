@@ -56,7 +56,8 @@ you have the plugin already.
 | Ctrl/Cmd + scroll | Zoom about the cursor |
 | Scroll / Shift + scroll | Pan vertically / horizontally |
 | Drag | Pan |
-| Toolbar | Zoom in/out, Fit to Window, Actual Size, Show External References, Show Owners as Badges, Reload |
+| Toolbar | Zoom in/out, Fit to Window, Actual Size, Show External References, Show Owners as Badges, Focus on Selection, Reload |
+| **Focus on Selection** on | Draw only the selected entity and what it is joined to, laid out afresh; the focus follows each click, Find and caret move |
 
 Edge labels appear above roughly 75% zoom and are hidden below it, on purpose. Edges are coloured
 by relation, with inverse pairs (`childOf`/`parentOf`) sharing a colour, and the legend lists the

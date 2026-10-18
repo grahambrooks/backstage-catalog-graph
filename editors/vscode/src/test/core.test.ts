@@ -5,6 +5,7 @@ import { isCatalogFileName, matchesBaseName } from '../core/catalogFiles';
 import { buildCatalogGraph } from '../core/catalogGraphBuilder';
 import { declaredNodes, entityAt, externalNodes, keyOf } from '../core/catalogGraph';
 import { formatRef, parseRef, shortLabel } from '../core/entityRef';
+import { focusAround } from '../core/focus';
 import { layoutGraph } from '../core/layeredLayout';
 import { foldOwners } from '../core/ownerBadges';
 import { readDocuments } from '../core/yamlDocuments';
@@ -275,5 +276,58 @@ spec: { type: team, parent: platform }
   test('leaves the logical layer whole', () => {
     equal(layout.layers.length, 1);
     equal(layout.layers[0].length, 4);
+  });
+});
+
+describe('focus', () => {
+  const graph = buildCatalogGraph(
+    readDocuments(`
+kind: System
+metadata: { name: shop }
+---
+kind: Component
+metadata: { name: cart }
+spec: { system: shop, providesApis: [cart-api], owner: team }
+---
+kind: Component
+metadata: { name: payments }
+spec: { system: shop, owner: team }
+---
+kind: API
+metadata: { name: cart-api }
+---
+kind: Component
+metadata: { name: unrelated }
+spec: { consumesApis: [cart-api] }
+---
+kind: Group
+metadata: { name: team }
+`),
+  );
+  const drawn = foldOwners(graph).graph;
+  const keys = (focused: ReturnType<typeof focusAround>) => new Set(focused.nodes.keys());
+
+  test('keeps the entity, its drawn neighbours and the edges among them', () => {
+    const focused = focusAround(drawn, 'component:default/cart');
+    deepStrictEqual(
+      keys(focused),
+      new Set(['component:default/cart', 'system:default/shop', 'api:default/cart-api']),
+    );
+    equal(focused.edges.length, 2);
+  });
+
+  test('a focused owner keeps the entities it owns', () => {
+    const focused = focusAround(drawn, 'group:default/team', [
+      'component:default/cart',
+      'component:default/payments',
+    ]);
+    deepStrictEqual(
+      keys(focused),
+      new Set(['group:default/team', 'component:default/cart', 'component:default/payments']),
+    );
+  });
+
+  test('focusing on something not drawn changes nothing', () => {
+    equal(focusAround(drawn, 'component:default/hidden'), drawn);
   });
 });
