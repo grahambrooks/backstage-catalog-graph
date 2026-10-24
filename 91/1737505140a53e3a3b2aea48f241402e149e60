@@ -1,0 +1,46 @@
+CLAUDE.md
+  s_ee5cef03bfcf8b::t_ec1ff53bdc5002 129-131
+  s_ee5cef03bfcf8b::t_d7e4d33e2716f1 114-116
+ROADMAP.md
+  s_ee5cef03bfcf8b::t_d7e4d33e2716f1 11-13,15,17-18,23-25,27-28
+editors/jetbrains/src/main/resources/META-INF/pluginIcon_dark.svg
+  s_ee5cef03bfcf8b::t_647cab0696e404 1-11
+editors/vscode/README.md
+  s_ee5cef03bfcf8b::t_ec1ff53bdc5002 13-22
+.github/workflows/release.yml
+  s_ee5cef03bfcf8b::t_9da480b9018e0f 7,10-11,45,67-84,88
+CHANGELOG.md
+  s_ee5cef03bfcf8b::t_d7e4d33e2716f1 9-23
+editors/vscode/package.json
+  s_ee5cef03bfcf8b::t_736c9ad42cb79d 8,28-30
+  s_ee5cef03bfcf8b::t_a4d54aee936947 31
+README.md
+  s_ee5cef03bfcf8b::t_d7e4d33e2716f1 13-15,17-32,34-61,186-193
+  s_ee5cef03bfcf8b::t_da3c8469be2a7e 183-185
+SECURITY.md
+  s_ee5cef03bfcf8b::t_7e1ea3c70d3fda 1-11
+editors/jetbrains/src/main/resources/META-INF/pluginIcon.svg
+  s_ee5cef03bfcf8b::t_647cab0696e404 2-3,5-6,8-10
+  s_ee5cef03bfcf8b::t_17c073b05076c4 1,4,7,11
+editors/jetbrains/src/main/resources/META-INF/plugin.xml
+  s_ee5cef03bfcf8b::t_736c9ad42cb79d 7,9,12,15,17-22,24,27-29
+  s_ee5cef03bfcf8b::t_651f7e64e2a92c 30
+CONTRIBUTING.md
+  s_ee5cef03bfcf8b::t_facf82a3626c37 1-69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "911737505140a53e3a3b2aea48f241402e149e60",
+  "prompts": {},
+  "sessions": {
+    "s_ee5cef03bfcf8b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5d90bd17-250d-4ad7-8bd6-bfc0f44b48d1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Graham Brooks <graham@grahambrooks.com>"
+    }
+  }
+}
