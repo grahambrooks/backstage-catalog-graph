@@ -10,13 +10,55 @@ owning group lives in the org catalog, the system is defined in another reposito
 tidier but dishonest picture, so they are drawn as ghosts, and the graph shows both what the
 file defines and what it assumes exists.
 
-| Editor | Status | |
-|---|---|---|
-| **VS Code** — and Cursor, Windsurf, VSCodium, Theia, Codespaces | Shipped | [`editors/vscode`](editors/vscode) |
-| **JetBrains** — IDEA, PyCharm, GoLand, RustRover, … | Shipped | [`editors/jetbrains`](editors/jetbrains) |
+![The storefront example in VS Code: YAML on the left, its catalog graph on the right, with dashed placeholders for the group, API, resource and user it references but does not declare](docs/images/vscode-storefront.png)
 
-No other editors are planned, and nothing is on a public marketplace yet — see
-[ROADMAP.md](ROADMAP.md).
+| Editor | Package | Source |
+|---|---|---|
+| **VS Code** — and Cursor, Windsurf, VSCodium, Theia, Codespaces | `.vsix` | [`editors/vscode`](editors/vscode) |
+| **JetBrains** — IDEA, PyCharm, GoLand, RustRover, … 2025.2 or newer | `.zip` | [`editors/jetbrains`](editors/jetbrains) |
+
+Both are installed from [GitHub Releases](https://github.com/grahambrooks/backstage-catalog-graph/releases);
+neither is on a marketplace yet, and no other editors are planned — see [ROADMAP.md](ROADMAP.md).
+
+## Installing
+
+Download the package for your editor from the
+[latest release](https://github.com/grahambrooks/backstage-catalog-graph/releases/latest).
+
+- **VS Code**: `code --install-extension backstage-catalog-graph-<version>.vsix`, or
+  **Extensions → ⋯ → Install from VSIX…**. Cursor, Windsurf and VSCodium take the same file —
+  substitute `cursor`, `windsurf` or `codium` for `code`.
+- **JetBrains**: **Settings → Plugins → ⚙ → Install Plugin from Disk…**, and choose the `.zip`
+  itself — do not unpack it.
+
+Then open any `catalog-info.yaml`. In VS Code, click **Show Catalog Graph to the Side** in the
+editor title bar; in a JetBrains IDE the file opens with a **Text** / **Backstage Catalog** split.
+
+Packages installed this way do not update themselves: install a newer release over the old one.
+
+Each release carries a `SHA256SUMS` file and a signed build-provenance attestation, so a download
+can be checked against the workflow run that built it:
+
+```bash
+sha256sum --check --ignore-missing SHA256SUMS
+gh attestation verify backstage-catalog-graph-<version>.vsix --repo grahambrooks/backstage-catalog-graph
+```
+
+## Screenshots
+
+The same descriptors in the JetBrains plugin. Both editors lay a file out identically — the layer
+ordering is part of the shared contract — and differ only in how they draw it.
+
+![The storefront example in IntelliJ IDEA, with the catalog graph in a split beside the YAML](docs/images/jetbrains-storefront.png)
+
+A file whose every reference leaves it: one declared component, and nine placeholders for what
+it assumes exists elsewhere.
+
+![The external-references example: a single solid component node surrounded by dashed placeholder nodes](docs/images/vscode-external-references.png)
+
+The 37-entity example, fitted to the pane.
+
+![The large-catalog example in IntelliJ IDEA: 37 entities in layers from Domain down to User](docs/images/jetbrains-large-catalog.png)
 
 ## Layout
 
@@ -138,10 +180,17 @@ Stated so a later change doesn't "complete" something that was cut on purpose:
 
 CalVer, kept in step across editors: `pluginVersion` in `editors/jetbrains/gradle.properties`
 and `version` in `editors/vscode/package.json`. Tag `v<version>`; the release workflow checks
-both match, builds each editor's artifact, and attaches them to a GitHub release — in this
-private repository, which is how testers get packages for now. Publishing to the JetBrains
-Marketplace and the VS Code Marketplace is deferred (see [ROADMAP.md](ROADMAP.md)); the workflow
-for it is irreversible and stays behind a manual `workflow_dispatch` that has never been run.
+both match, builds and tests each editor, records a build-provenance attestation for each
+package, and attaches the `.zip`, the `.vsix` and a `SHA256SUMS` file to a GitHub release, with
+that version's section of [CHANGELOG.md](CHANGELOG.md) as the notes. GitHub Releases is the distribution channel.
+Publishing to the JetBrains Marketplace and the VS Code Marketplace is deferred (see
+[ROADMAP.md](ROADMAP.md)); the workflow for it is irreversible and stays behind a manual
+`workflow_dispatch` that has never been run.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) — in particular, a change to what a descriptor means
+touches both editors. Report security issues privately, as described in [SECURITY.md](SECURITY.md).
 
 ## Licence
 

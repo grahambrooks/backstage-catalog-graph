@@ -6,6 +6,21 @@ in step between editors. The VS Code extension also carries
 
 ## [Unreleased]
 
+### Added
+
+- Icons for both editors, and screenshots in the README.
+- Installing from GitHub Releases is documented, and each release carries a `SHA256SUMS` file
+  and build-provenance attestations for the two packages.
+- `CONTRIBUTING.md` and `SECURITY.md`.
+
+### Changed
+
+- The repository is public. GitHub Releases is the distribution channel; marketplace publishing
+  stays deferred.
+- The JetBrains plugin description lists the current features and links to this changelog.
+- Releases attach only the two installable packages; the JetBrains test kit is no longer
+  attached, since "Install Plugin from Disk" rejects it.
+
 ## [2026.10.18]
 
 ### Added

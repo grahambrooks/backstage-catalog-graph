@@ -8,25 +8,24 @@ Two editors, both feature-complete for now: **JetBrains** ([`editors/jetbrains`]
 and **VS Code** ([`editors/vscode`](editors/vscode)), held to one behaviour contract by
 [`conformance/`](conformance/spec.md).
 
-The project is **not public yet**. The repository is private, and nothing is published to the
-JetBrains Marketplace or the VS Code Marketplace. Testers get packages from a tagged GitHub
-release in this private repository, or from `make package` (see the [README](README.md#building)).
+The repository is public, and packages are distributed through **GitHub Releases** (see the
+[README](README.md#installing)), or built locally with `make package`. Nothing is published to
+the JetBrains Marketplace or the VS Code Marketplace.
 
-## Deferred: going public
+## Deferred: marketplace publishing
 
-Publishing is deferred, not abandoned. Everything it needs is already in place and stays
-switched off:
+Publishing to the marketplaces is deferred, not abandoned. Everything it needs is already in
+place and stays switched off:
 
 - [`publish-marketplace.yml`](.github/workflows/publish-marketplace.yml) is a manual
   `workflow_dispatch` behind the `marketplaces` environment. It has never been run, and nothing
   runs it automatically. Publishing a version cannot be undone, so it stays that way until the
-  decision to go public is made.
-- The release workflow still builds and attaches both packages to a GitHub release on a
-  `v<version>` tag, which is all private distribution needs.
+  decision to publish is made.
+- The release workflow builds and attaches both packages to a GitHub release on a
+  `v<version>` tag, which is all distribution needs for now.
 
-Before publishing, at minimum: make the repository public (or point the marketplace listings at
-somewhere public), review both READMEs as store pages, and check the extension's `publisher` and
-the plugin's vendor details.
+Before publishing, at minimum: review both READMEs as store pages, register the extension's
+`publisher`, and check the plugin's vendor details.
 
 ## Not planned: more editors
 

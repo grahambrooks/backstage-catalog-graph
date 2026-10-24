@@ -10,6 +10,16 @@ owning group lives in the org catalog, the system is defined in another reposito
 tidier but dishonest picture, so they are drawn as ghosts, and the graph shows both what the
 file defines and what it assumes exists.
 
+![The storefront example: YAML on the left, its catalog graph on the right, with dashed placeholders for what it references but does not declare](https://raw.githubusercontent.com/grahambrooks/backstage-catalog-graph/main/docs/images/vscode-storefront.png)
+
+## Installing
+
+Download `backstage-catalog-graph-<version>.vsix` from the
+[latest release](https://github.com/grahambrooks/backstage-catalog-graph/releases/latest), then
+either run `code --install-extension backstage-catalog-graph-<version>.vsix` or use
+**Extensions → ⋯ → Install from VSIX…**. Cursor, Windsurf and VSCodium take the same file. It
+does not update itself; install a newer release over it.
+
 ## Using it
 
 Open a `catalog-info.yaml` and either:

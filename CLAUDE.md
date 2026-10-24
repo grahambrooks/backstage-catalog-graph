@@ -111,8 +111,9 @@ code --extensionDevelopmentPath="$PWD" --new-window ../../examples
   and `version` in `editors/vscode/package.json`. The release workflow fails a tag that matches
   one but not the other.
 - **Trunk-based**: commit directly to `main`; PRs are not required.
-- **Irreversible publishes stay behind a manual `workflow_dispatch`** — both marketplaces. Not
-  going public yet: do not run it, and do not suggest it as a next step.
+- **Irreversible publishes stay behind a manual `workflow_dispatch`** — both marketplaces.
+  Marketplace publishing is deferred: do not run it, and do not suggest it as a next step.
+  GitHub Releases (the tag-triggered `release.yml`) is the distribution channel.
 - `examples/` is simultaneously the human test plan and the conformance corpus input. Adding an
   example means updating `examples/README.md`, `ExamplesTest.kt` *and*
   `conformance/manifest.json`, then regenerating the goldens.
@@ -125,5 +126,6 @@ point), there is no network access, `Location.spec.targets` produces no edges, a
 read-only.
 
 Two more decisions, both in `ROADMAP.md`: **no further editors** (the earlier language-server
-plan is shelved, not pending), and **publishing is deferred** — the repository is private and
-`publish-marketplace.yml` must not be run until the owner decides to go public.
+plan is shelved, not pending), and **marketplace publishing is deferred** — the repository is
+public and ships through GitHub Releases, but `publish-marketplace.yml` must not be run until the
+owner decides to publish.
