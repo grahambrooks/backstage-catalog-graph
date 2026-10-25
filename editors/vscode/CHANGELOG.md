@@ -2,6 +2,17 @@
 
 Versions are CalVer (`YYYY.M.D`) and are kept in step with the JetBrains plugin.
 
+## [2026.10.24]
+
+### Added
+
+- An extension icon, and screenshots and install instructions in the README.
+
+### Changed
+
+- Distributed through GitHub Releases, with a `SHA256SUMS` file and build-provenance
+  attestations.
+
 ## [2026.10.18]
 
 ### Added

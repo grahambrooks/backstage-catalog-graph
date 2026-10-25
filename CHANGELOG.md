@@ -6,6 +6,12 @@ in step between editors. The VS Code extension also carries
 
 ## [Unreleased]
 
+## [2026.10.24]
+
+The first public release. Earlier versions were never released, so this one also carries
+everything listed under [2026.10.18](https://github.com/grahambrooks/backstage-catalog-graph/blob/main/CHANGELOG.md#20261018)
+and before.
+
 ### Added
 
 - Icons for both editors, and screenshots in the README.
