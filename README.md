@@ -29,12 +29,16 @@ Download the package for your editor from the
   **Extensions → ⋯ → Install from VSIX…**. Cursor, Windsurf and VSCodium take the same file —
   substitute `cursor`, `windsurf` or `codium` for `code`.
 - **JetBrains**: **Settings → Plugins → ⚙ → Install Plugin from Disk…**, and choose the `.zip`
-  itself — do not unpack it.
+  itself — do not unpack it. Or, to get updates automatically, add
+  `https://www.grahambrooks.com/plugins/updatePlugins.xml` under **Settings → Plugins → ⚙ →
+  Manage Plugin Repositories…** and install *Backstage Catalog Graph* from the **Marketplace**
+  tab; [www.grahambrooks.com/plugins](https://www.grahambrooks.com/plugins/) has the details.
 
 Then open any `catalog-info.yaml`. In VS Code, click **Show Catalog Graph to the Side** in the
 editor title bar; in a JetBrains IDE the file opens with a **Text** / **Backstage Catalog** split.
 
-Packages installed this way do not update themselves: install a newer release over the old one.
+Packages installed from a file do not update themselves: install a newer release over the old
+one.
 
 Each release carries a `SHA256SUMS` file and a signed build-provenance attestation, so a download
 can be checked against the workflow run that built it:

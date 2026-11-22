@@ -113,7 +113,11 @@ code --extensionDevelopmentPath="$PWD" --new-window ../../examples
 - **Trunk-based**: commit directly to `main`; PRs are not required.
 - **Irreversible publishes stay behind a manual `workflow_dispatch`** — both marketplaces.
   Marketplace publishing is deferred: do not run it, and do not suggest it as a next step.
-  GitHub Releases (the tag-triggered `release.yml`) is the distribution channel.
+  GitHub Releases (the tag-triggered `release.yml`) is the distribution channel. After
+  publishing, `release.yml` runs grahambrooks.com's deploy (secret `PLUGIN_FEED_TOKEN`), which
+  republishes both packages at www.grahambrooks.com/plugins/ — a JetBrains plugin repository
+  (`updatePlugins.xml`) that IDEs update from, plus direct downloads. The site repo's
+  CLAUDE.md ("Editor plugins") describes the collector.
 - `examples/` is simultaneously the human test plan and the conformance corpus input. Adding an
   example means updating `examples/README.md`, `ExamplesTest.kt` *and*
   `conformance/manifest.json`, then regenerating the goldens.

@@ -87,3 +87,15 @@ jobs:
         with:
           files: dist/*
           body_path: release-notes.md
+
+      # grahambrooks.com's deploy collects the newest releases into its plugin feeds
+      # (www.grahambrooks.com/plugins/), so run it now rather than at its next push.
+      - name: Update the plugin feed on grahambrooks.com
+        env:
+          GH_TOKEN: ${{ secrets.PLUGIN_FEED_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::PLUGIN_FEED_TOKEN is not set; the site's plugin feed updates at its next deploy."
+            exit 0
+          fi
+          gh workflow run deploy.yml -R grahambrooks/grahambrooks.com
