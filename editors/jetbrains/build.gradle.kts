@@ -1,4 +1,5 @@
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -13,7 +14,8 @@ kotlin {
     jvmToolchain(providers.gradleProperty("javaVersion").get().toInt())
     compilerOptions {
         jvmTarget = JvmTarget.JVM_21
-        freeCompilerArgs.add("-Xjvm-default=all")
+        // Kotlin 2.2 replacement for -Xjvm-default=all.
+        jvmDefault = JvmDefaultMode.NO_COMPATIBILITY
     }
 }
 

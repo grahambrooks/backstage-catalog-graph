@@ -112,8 +112,13 @@
   "devDependencies": {
     "@types/node": "^20.19.43",
     "@types/vscode": "1.90.0",
-    "@vscode/vsce": "^4.0.0",
+    "@vscode/vsce": "^4.1.1",
     "esbuild": "^0.28.0",
     "typescript": "^7.0.2"
+  },
+  "overrides": {
+    "@vscode/vsce": {
+      "minimatch": "^11.0.1"
+    }
   }
 }
