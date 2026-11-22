@@ -6,6 +6,11 @@ in step between editors. The VS Code extension also carries
 
 ## [Unreleased]
 
+### Changed
+
+- The JetBrains plugin is verified against IntelliJ IDEA 2026.3 (build 263) as well as 2025.2,
+  the oldest supported release. IntelliJ Platform Gradle Plugin 2.20.1.
+
 ## [2026.10.24]
 
 The first public release. Earlier versions were never released, so this one also carries

@@ -1,3 +1,4 @@
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -71,6 +72,10 @@ intellijPlatform {
     pluginVerification {
         ides {
             recommended()
+            // Pinned at both ends of the supported range, so the oldest (sinceBuild) and the
+            // newest stable release are always checked even if `recommended()` drifts.
+            create(IntelliJPlatformType.IntellijIdeaCommunity, providers.gradleProperty("platformVersion"))
+            create(IntelliJPlatformType.IntellijIdea, providers.gradleProperty("verifyLatestVersion"))
         }
     }
 }

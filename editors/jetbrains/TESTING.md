@@ -15,8 +15,8 @@ backstage-catalog-graph-<version>-testkit/
 
 ## What you need
 
-- A JetBrains IDE, **2025.2 or newer**. Verified against IntelliJ IDEA Community 2025.2.6;
-  it should also load in PyCharm, WebStorm, GoLand, RustRover, CLion, Rider, RubyMine and
+- A JetBrains IDE, **2025.2 or newer**. Verified against IntelliJ IDEA Community 2025.2.6 and IntelliJ
+  IDEA 2026.3; it should also load in PyCharm, WebStorm, GoLand, RustRover, CLion, Rider, RubyMine and
   PhpStorm, all of which bundle the YAML support the plugin depends on.
 - Nothing else. No JDK, no Gradle, no Backstage instance.
 
